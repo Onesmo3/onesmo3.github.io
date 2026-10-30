@@ -32,10 +32,158 @@ main{padding-bottom:48px}.hero{padding:58px 0 30px}.eyebrow{font:600 .8rem var(-
 <div class="field"><label for="dry">Container + dry soil (g)</label><input id="dry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div></div>
 <div class="actions"><button class="btn primary" id="calculate" type="button">Calculate</button><button class="btn secondary" id="reset" type="button">Reset</button></div><p class="hint" id="message" role="status" aria-live="polite">Enter the three masses to calculate water content.</p></div>
 <aside class="tool result" aria-live="polite"><small>Calculated moisture content</small><div class="value" id="answer">— %</div><p id="breakdown">The result will appear here after calculation.</p><div class="formula">w (%) = [(Wet soil mass − Dry soil mass) ÷ Dry soil mass] × 100</div></aside></div>
+
+<section id="mdd-omc">
+  <div class="section-head">
+    <h2>MDD &amp; OMC compaction calculator</h2>
+    <p>Enter mould details once, then add the raw measurements for each compaction point.</p>
+  </div>
+  <div class="tool">
+    <h3>1. Mould information</h3>
+    <div class="fields" style="margin-top:16px">
+      <div class="field"><label for="mouldId">Mould ID</label><input id="mouldId" type="text" placeholder="e.g. Mould 01"></div>
+      <div class="field"><label for="mouldMass">Empty mould mass (g)</label><input id="mouldMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 4250"></div>
+      <div class="field"><label for="mouldVolume">Mould volume (cm³)</label><input id="mouldVolume" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 1000"></div>
+    </div>
+    <div class="formula">Wet soil mass = (Mould + compacted wet soil) − Empty mould mass<br>Wet density = Wet soil mass ÷ Mould volume<br>Dry density = Wet density ÷ (1 + moisture content ÷ 100)</div>
+  </div>
+
+  <div class="tool" style="margin-top:18px">
+    <h3>2. Compaction test points</h3>
+    <p class="hint">Use grams for all mass readings and cm³ for mould volume. Each row represents one moisture-content sample associated with one compacted mould specimen.</p>
+    <div class="fields" style="margin-top:18px">
+      <div class="field"><label for="pointLabel">Point label (optional)</label><input id="pointLabel" type="text" placeholder="e.g. Point 1"></div>
+      <div class="field"><label for="mouldWet">Mould + compacted wet soil (g)</label><input id="mouldWet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 5850"></div>
+      <div class="field"><label for="containerMass">Empty moisture container (g)</label><input id="containerMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
+      <div class="field"><label for="containerWet">Container + wet soil (g)</label><input id="containerWet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
+      <div class="field"><label for="containerDry">Container + dry soil (g)</label><input id="containerDry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="addPoint" type="button">Add test point</button>
+      <button class="btn secondary" id="clearPointForm" type="button">Clear fields</button>
+    </div>
+    <p class="hint" id="mddMessage" role="status" aria-live="polite">Enter mould details and a test point to begin.</p>
+  </div>
+
+  <div class="tool" style="margin-top:18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <h3 style="margin:0">3. Test results</h3>
+      <div class="actions" style="margin:0">
+        <button class="btn secondary" id="calculateMdd" type="button">Calculate MDD &amp; OMC</button>
+        <button class="btn secondary" id="resetMdd" type="button">Reset test</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;margin-top:16px">
+      <table id="mddTable" style="width:100%;border-collapse:collapse;min-width:760px;font-size:.9rem">
+        <thead><tr>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Point</th>
+          <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line)">Water content (%)</th>
+          <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line)">Wet density (g/cm³)</th>
+          <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line)">Dry density (g/cm³)</th>
+          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Action</th>
+        </tr></thead>
+        <tbody id="mddRows"><tr><td colspan="5" style="padding:14px;color:var(--muted)">No test points added yet.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px">
+      <div class="tool result"><small>Maximum Dry Density (MDD)</small><div class="value" id="mddValue">—</div><small>g/cm³</small></div>
+      <div class="tool result"><small>Optimum Moisture Content (OMC)</small><div class="value" id="omcValue">—</div><small>%</small></div>
+    </div>
+    <p class="hint" id="peakNote">Results will appear after calculating at least three valid test points.</p>
+  </div>
+
+  <div class="tool" style="margin-top:18px">
+    <h3>4. Compaction curve</h3>
+    <p class="hint">Dry density is plotted against moisture content. The chart connects the measured test points; it does not invent intermediate measurements.</p>
+    <div style="width:100%;overflow:hidden;margin-top:12px">
+      <canvas id="compactionChart" height="300" style="display:block;width:100%;max-width:100%;"></canvas>
+    </div>
+  </div>
+  <div class="notice"><strong>Engineering note:</strong> The reported MDD and OMC are the highest measured dry density and its corresponding measured moisture content in the entered data. Use enough valid points to define the curve, including points on both sides of the peak. Confirm mould calibration, compaction procedure, moisture determination, units and reporting requirements against the project specification and applicable test standard. This tool does not determine acceptance or replace engineering review.</div>
+</section>
+
 <div class="notice"><strong>Engineering note:</strong> This calculator performs the arithmetic only. Confirm the test procedure, drying requirements, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div></section></main>
 <footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
 <script>
 const root=document.documentElement,themeBtn=document.getElementById('themeBtn');function setTheme(theme){root.dataset.theme=theme;themeBtn.textContent=theme==='dark'?'☀️ Light':'🌙 Dark';try{localStorage.setItem('mbisecad-theme',theme)}catch(e){}}let saved='dark';try{saved=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){}setTheme(saved);themeBtn.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));document.getElementById('year').textContent=new Date().getFullYear();const ids=['tare','wet','dry'];
 document.getElementById('calculate').addEventListener('click',()=>{const [tare,wet,dry]=ids.map(id=>Number(document.getElementById(id).value)),message=document.getElementById('message');if(ids.some(id=>document.getElementById(id).value.trim()==='')||![tare,wet,dry].every(Number.isFinite)){message.textContent='Please enter all three measurements.';return;}const wetSoil=wet-tare,drySoil=dry-tare,water=wet-dry;if(tare<0||wetSoil<=0||drySoil<=0||water<0){message.textContent='Check the masses: wet soil must not be lighter than dry soil, and both soil masses must be positive.';return;}const content=water/drySoil*100;document.getElementById('answer').textContent=content.toFixed(2)+' %';document.getElementById('breakdown').textContent='Water mass: '+water.toFixed(2)+' g · Dry soil mass: '+drySoil.toFixed(2)+' g';message.textContent='Calculation completed.';});
 document.getElementById('reset').addEventListener('click',()=>{ids.forEach(id=>document.getElementById(id).value='');document.getElementById('answer').textContent='— %';document.getElementById('breakdown').textContent='The result will appear here after calculation.';document.getElementById('message').textContent='Enter the three masses to calculate water content.';});
+
+// MDD & OMC calculator
+const compactionPoints=[];
+const mddInputIds=['mouldId','mouldMass','mouldVolume','pointLabel','mouldWet','containerMass','containerWet','containerDry'];
+const numberFrom=(id)=>Number(document.getElementById(id).value);
+const fmt=(n,d=3)=>Number(n).toFixed(d);
+function renderMddRows(){
+  const body=document.getElementById('mddRows');
+  if(!compactionPoints.length){body.innerHTML='<tr><td colspan="5" style="padding:14px;color:var(--muted)">No test points added yet.</td></tr>';return;}
+  body.innerHTML=compactionPoints.map((p,i)=>`<tr>
+    <td style="padding:10px;border-bottom:1px solid var(--line-soft)">${escapeHtml(p.label)}</td>
+    <td style="text-align:right;padding:10px;border-bottom:1px solid var(--line-soft)">${fmt(p.w,2)}</td>
+    <td style="text-align:right;padding:10px;border-bottom:1px solid var(--line-soft)">${fmt(p.wetDensity,3)}</td>
+    <td style="text-align:right;padding:10px;border-bottom:1px solid var(--line-soft)">${fmt(p.dryDensity,3)}</td>
+    <td style="padding:10px;border-bottom:1px solid var(--line-soft)"><button class="btn secondary" type="button" data-remove-point="${i}" style="padding:6px 10px">Remove</button></td>
+  </tr>`).join('');
+}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function drawCompactionChart(){
+  const canvas=document.getElementById('compactionChart');
+  const rect=canvas.getBoundingClientRect(),width=Math.max(300,rect.width),height=300,dpr=window.devicePixelRatio||1;
+  canvas.width=width*dpr;canvas.height=height*dpr;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,width,height);
+  const styles=getComputedStyle(document.documentElement),text=styles.getPropertyValue('--muted').trim(),line=styles.getPropertyValue('--line').trim(),green=styles.getPropertyValue('--green').trim(),orange=styles.getPropertyValue('--orange').trim();
+  const pts=[...compactionPoints].sort((a,b)=>a.w-b.w),left=58,right=width-18,top=18,bottom=height-42;
+  ctx.font='12px IBM Plex Sans, sans-serif';ctx.fillStyle=text;ctx.strokeStyle=line;ctx.lineWidth=1;
+  if(pts.length<2){ctx.fillText('Add at least two valid points to display the curve.',18,40);return;}
+  const minX=Math.min(...pts.map(p=>p.w)),maxX=Math.max(...pts.map(p=>p.w)),minY=Math.min(...pts.map(p=>p.dryDensity)),maxY=Math.max(...pts.map(p=>p.dryDensity));
+  const xPad=(maxX-minX||1)*.12,yPad=(maxY-minY||.1)*.22;
+  const x0=minX-xPad,x1=maxX+xPad,y0=Math.max(0,minY-yPad),y1=maxY+yPad;
+  const X=v=>left+(v-x0)/(x1-x0)*(right-left),Y=v=>bottom-(v-y0)/(y1-y0)*(bottom-top);
+  for(let i=0;i<=4;i++){const y=top+(bottom-top)*i/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();ctx.fillText((y1-(y1-y0)*i/4).toFixed(2),8,y+4);}
+  ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();
+  ctx.fillStyle=text;ctx.textAlign='center';ctx.fillText('Moisture content (%)',(left+right)/2,height-8);
+  ctx.save();ctx.translate(14,(top+bottom)/2);ctx.rotate(-Math.PI/2);ctx.fillText('Dry density (g/cm³)',0,0);ctx.restore();ctx.textAlign='left';
+  ctx.strokeStyle=green;ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>{if(i===0)ctx.moveTo(X(p.w),Y(p.dryDensity));else ctx.lineTo(X(p.w),Y(p.dryDensity));});ctx.stroke();
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(X(p.w),Y(p.dryDensity),4.5,0,Math.PI*2);ctx.fillStyle=orange;ctx.fill();});
+  const peak=pts.reduce((a,b)=>b.dryDensity>a.dryDensity?b:a,pts[0]);ctx.fillStyle=green;ctx.font='600 12px IBM Plex Sans, sans-serif';ctx.fillText('Measured peak',Math.min(right-88,X(peak.w)+8),Math.max(top+12,Y(peak.dryDensity)-10));
+}
+document.getElementById('addPoint').addEventListener('click',()=>{
+  const msg=document.getElementById('mddMessage'),mass=numberFrom('mouldMass'),volume=numberFrom('mouldVolume'),mouldWet=numberFrom('mouldWet'),tare=numberFrom('containerMass'),containerWet=numberFrom('containerWet'),containerDry=numberFrom('containerDry');
+  const required=['mouldMass','mouldVolume','mouldWet','containerMass','containerWet','containerDry'];
+  if(required.some(id=>document.getElementById(id).value.trim()==='')||!required.every(id=>Number.isFinite(numberFrom(id)))){msg.textContent='Enter all required measurements using numbers.';return;}
+  const wetSoil=mouldWet-mass,wetSample=containerWet-tare,drySample=containerDry-tare,water=containerWet-containerDry;
+  if(mass<0||volume<=0||wetSoil<=0||wetSample<=0||drySample<=0||water<0){msg.textContent='Check the readings: mould volume and soil masses must be positive, and wet sample mass cannot be less than dry sample mass.';return;}
+  const w=water/drySample*100,wetDensity=wetSoil/volume,dryDensity=wetDensity/(1+w/100);
+  if(![w,wetDensity,dryDensity].every(Number.isFinite)||dryDensity<=0){msg.textContent='These measurements do not produce a valid result. Please check the values and units.';return;}
+  const label=document.getElementById('pointLabel').value.trim()||`Point ${compactionPoints.length+1}`;
+  compactionPoints.push({label,w,wetDensity,dryDensity});
+  renderMddRows();drawCompactionChart();
+  document.getElementById('mddMessage').textContent=`${label} added. Add the next compaction point.`;
+  ['pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Recalculate after adding or removing test points.';
+});
+document.getElementById('clearPointForm').addEventListener('click',()=>['pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(id=>document.getElementById(id).value=''));
+document.getElementById('mddRows').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-remove-point]');if(!btn)return;
+  compactionPoints.splice(Number(btn.dataset.removePoint),1);renderMddRows();drawCompactionChart();
+  document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Recalculate after changing test points.';
+});
+document.getElementById('calculateMdd').addEventListener('click',()=>{
+  const msg=document.getElementById('mddMessage');
+  if(compactionPoints.length<3){msg.textContent='Add at least three valid test points before calculating MDD and OMC.';return;}
+  const peak=compactionPoints.reduce((a,b)=>b.dryDensity>a.dryDensity?b:a,compactionPoints[0]);
+  document.getElementById('mddValue').textContent=fmt(peak.dryDensity,3);
+  document.getElementById('omcValue').textContent=fmt(peak.w,2);
+  document.getElementById('peakNote').textContent=`Highest measured dry density: ${fmt(peak.dryDensity,3)} g/cm³ at ${fmt(peak.w,2)}% moisture content (${escapeHtml(peak.label)}). These are measured-point values, not a fitted-curve estimate.`;
+  msg.textContent='MDD and OMC calculated from the highest measured dry-density point.';
+  drawCompactionChart();
+});
+document.getElementById('resetMdd').addEventListener('click',()=>{
+  compactionPoints.length=0;
+  ['mouldId','mouldMass','mouldVolume','pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(id=>document.getElementById(id).value='');
+  renderMddRows();drawCompactionChart();document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Results will appear after calculating at least three valid test points.';document.getElementById('mddMessage').textContent='Test data cleared.';
+});
+window.addEventListener('resize',drawCompactionChart);
+drawCompactionChart();
+
 </script></body></html>
