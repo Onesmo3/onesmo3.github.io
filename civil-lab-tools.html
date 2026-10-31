@@ -94,12 +94,12 @@ main{padding-bottom:48px}.hero{padding:58px 0 30px}.eyebrow{font:600 .8rem var(-
 
   <div class="tool" style="margin-top:18px">
     <h3>4. Compaction curve</h3>
-    <p class="hint">Dry density is plotted against moisture content. The chart connects the measured test points; it does not invent intermediate measurements.</p>
+    <p class="hint">Dry density is plotted against moisture content. The smooth natural cubic spline passes through all measured points; the marked peak is used to determine MDD and OMC.</p>
     <div style="width:100%;overflow:hidden;margin-top:12px">
       <canvas id="compactionChart" height="300" style="display:block;width:100%;max-width:100%;"></canvas>
     </div>
   </div>
-  <div class="notice"><strong>Engineering note:</strong> The reported MDD and OMC are the highest measured dry density and its corresponding measured moisture content in the entered data. Use enough valid points to define the curve, including points on both sides of the peak. Confirm mould calibration, compaction procedure, moisture determination, units and reporting requirements against the project specification and applicable test standard. This tool does not determine acceptance or replace engineering review.</div>
+  <div class="notice"><strong>Engineering note:</strong> The reported MDD and OMC are determined from the maximum of a natural cubic spline interpolated through all five measured dry-density/moisture-content points. The peak is searched only within the measured moisture-content range. Use enough valid points to define the curve, including points on both sides of the peak. Confirm mould calibration, compaction procedure, moisture determination, units and reporting requirements against the project specification and applicable test standard. This tool does not determine acceptance or replace engineering review.</div>
 </section>
 
 <div class="notice"><strong>Engineering note:</strong> This calculator performs the arithmetic only. Confirm the test procedure, drying requirements, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div></section></main>
@@ -168,15 +168,134 @@ document.getElementById('mddRows').addEventListener('click',e=>{
   compactionPoints.splice(Number(btn.dataset.removePoint),1);renderMddRows();drawCompactionChart();
   document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Recalculate after changing test points.';
 });
+
+// Natural cubic spline: smooth interpolation through every measured point.
+function buildNaturalSpline(points){
+  const p = [...points].sort((a,b)=>a.w-b.w);
+  const n=p.length, h=[], alpha=[], l=Array(n).fill(0),
+        mu=Array(n).fill(0), z=Array(n).fill(0),
+        a=p.map(v=>v.d), b=Array(n-1).fill(0),
+        c=Array(n).fill(0), d=Array(n-1).fill(0);
+  for(let i=0;i<n-1;i++){
+    h[i]=p[i+1].w-p[i].w;
+    if(!(h[i]>0)) throw new Error('Moisture content values must be unique.');
+  }
+  for(let i=1;i<n-1;i++){
+    alpha[i]=3/h[i]*(a[i+1]-a[i])-3/h[i-1]*(a[i]-a[i-1]);
+  }
+  l[0]=1;
+  for(let i=1;i<n-1;i++){
+    l[i]=2*(p[i+1].w-p[i-1].w)-h[i-1]*mu[i-1];
+    if(Math.abs(l[i])<1e-12) throw new Error('Unable to build spline from these points.');
+    mu[i]=h[i]/l[i];
+    z[i]=(alpha[i]-h[i-1]*z[i-1])/l[i];
+  }
+  l[n-1]=1;
+  for(let j=n-2;j>=0;j--){
+    c[j]=z[j]-mu[j]*c[j+1];
+    b[j]=(a[j+1]-a[j])/h[j]-h[j]*(c[j+1]+2*c[j])/3;
+    d[j]=(c[j+1]-c[j])/(3*h[j]);
+  }
+  return {p,a,b,c,d,h};
+}
+function splineValue(s,i,x){
+  const t=x-s.p[i].w;
+  return s.a[i]+s.b[i]*t+s.c[i]*t*t+s.d[i]*t*t*t;
+}
+function findSplinePeak(s){
+  const candidates=[];
+  for(let i=0;i<s.h.length;i++){
+    const A=3*s.d[i], B=2*s.c[i], C=s.b[i], roots=[];
+    if(Math.abs(A)<1e-12){
+      if(Math.abs(B)>1e-12) roots.push(-C/B);
+    }else{
+      const disc=B*B-4*A*C;
+      if(disc>=0){
+        const q=Math.sqrt(disc);
+        roots.push((-B+q)/(2*A),(-B-q)/(2*A));
+      }
+    }
+    candidates.push({x:s.p[i].w,y:s.a[i]});
+    for(const t of roots){
+      if(t>1e-9 && t<s.h[i]-1e-9){
+        const x=s.p[i].w+t;
+        candidates.push({x,y:splineValue(s,i,x)});
+      }
+    }
+  }
+  const last=s.p.length-1;
+  candidates.push({x:s.p[last].w,y:s.p[last].d});
+  return candidates.reduce((best,v)=>v.y>best.y?v:best);
+}
+function drawSplineChart(points,s,peak){
+  const canvas=document.getElementById('compactionChart');
+  if(!canvas) return;
+  const rect=canvas.getBoundingClientRect(), W=Math.max(300,rect.width), H=300,
+        dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  const xs=points.map(p=>p.w), ys=points.map(p=>p.d);
+  const xmin=Math.min(...xs), xmax=Math.max(...xs);
+  const ymin=Math.min(...ys,peak.y), ymax=Math.max(...ys,peak.y);
+  const xpad=(xmax-xmin)*.08||1, ypad=(ymax-ymin)*.18||.05;
+  const L=48,R=16,T=18,B=34;
+  const X=x=>L+(x-(xmin-xpad))/((xmax-xmin)+2*xpad)*(W-L-R);
+  const Y=y=>H-B-(y-(ymin-ypad))/((ymax-ymin)+2*ypad)*(H-T-B);
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,H-B);ctx.lineTo(W-R,H-B);ctx.stroke();
+  ctx.fillStyle=getComputedStyle(document.body).color;
+  ctx.font='12px sans-serif';ctx.fillText('Dry density (g/cm³)',L,T-4);
+  ctx.fillText('Moisture content (%)',W/2-55,H-8);
+  // Draw smooth spline curve through all points.
+  ctx.strokeStyle='#f97316';ctx.lineWidth=3;ctx.beginPath();
+  let started=false;
+  for(let i=0;i<s.h.length;i++){
+    const steps=60;
+    for(let k=0;k<=steps;k++){
+      const x=s.p[i].w+s.h[i]*k/steps, y=splineValue(s,i,x);
+      if(!started){ctx.moveTo(X(x),Y(y));started=true;}else ctx.lineTo(X(x),Y(y));
+    }
+  }
+  ctx.stroke();
+  // Measured points.
+  ctx.fillStyle='#16a34a';
+  points.forEach(p=>{ctx.beginPath();ctx.arc(X(p.w),Y(p.d),5,0,Math.PI*2);ctx.fill();});
+  // Interpolated peak.
+  ctx.fillStyle='#dc2626';ctx.beginPath();ctx.arc(X(peak.x),Y(peak.y),6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=getComputedStyle(document.body).color;
+  ctx.fillText('Peak',Math.min(W-48,X(peak.x)+8),Math.max(14,Y(peak.y)-8));
+}
+
 document.getElementById('calculateMdd').addEventListener('click',()=>{
   const msg=document.getElementById('mddMessage');
-  if(compactionPoints.length<3){msg.textContent='Add at least three valid test points before calculating MDD and OMC.';return;}
-  const peak=compactionPoints.reduce((a,b)=>b.dryDensity>a.dryDensity?b:a,compactionPoints[0]);
-  document.getElementById('mddValue').textContent=fmt(peak.dryDensity,3);
-  document.getElementById('omcValue').textContent=fmt(peak.w,2);
-  document.getElementById('peakNote').textContent=`Highest measured dry density: ${fmt(peak.dryDensity,3)} g/cm³ at ${fmt(peak.w,2)}% moisture content (${escapeHtml(peak.label)}). These are measured-point values, not a fitted-curve estimate.`;
-  msg.textContent='MDD and OMC calculated from the highest measured dry-density point.';
-  drawCompactionChart();
+  if(compactionPoints.length<5){
+    msg.textContent='Enter all five compaction test points before calculating MDD and OMC.';
+    return;
+  }
+  if(compactionPoints.some(p=>!Number.isFinite(p.w)||!Number.isFinite(p.d))){
+    msg.textContent='Check all readings. Every point must have valid moisture content and dry density.';
+    return;
+  }
+  const sorted=[...compactionPoints].sort((a,b)=>a.w-b.w);
+  for(let i=1;i<sorted.length;i++){
+    if(Math.abs(sorted[i].w-sorted[i-1].w)<1e-8){
+      msg.textContent='Moisture content values must be different for all five points.';
+      return;
+    }
+  }
+  try{
+    const spline=buildNaturalSpline(sorted);
+    const peak=findSplinePeak(spline);
+    document.getElementById('mddValue').textContent=peak.y.toFixed(3);
+    document.getElementById('omcValue').textContent=peak.x.toFixed(2)+'%';
+    drawSplineChart(sorted,spline,peak);
+    msg.textContent='MDD and OMC are taken from the maximum of the smooth curve passing through all five measured points.';
+    document.getElementById('peakNote').textContent='Interpolated curve peak: '+peak.y.toFixed(3)+' g/cm³ at '+peak.x.toFixed(2)+'% moisture content.';
+  }catch(err){
+    msg.textContent=err.message||'Unable to calculate the spline curve. Check the entered data.';
+  }
 });
 document.getElementById('resetMdd').addEventListener('click',()=>{
   compactionPoints.length=0;
