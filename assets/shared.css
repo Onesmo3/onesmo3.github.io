@@ -1,1 +1,137 @@
+/* ==========================================================
+   MbiseCAD — Civil Lab Tools · shared.css
+   Theme, layout na components za pamoja kwa kurasa zote.
+   ========================================================== */
 
+:root{
+  color-scheme:dark;
+  --bg:#071a2f; --bg2:#0b2442; --panel:#0d2745;
+  --line:#25507d; --line-soft:#1a3a5f;
+  --text:#eef4fb; --muted:#9fb4cc;
+  --orange:#ff7a2e; --orange-ink:#1b0e04; --green:#8fd14f;
+  --grid:rgba(120,170,225,.10);
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+}
+[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f3f5f8; --bg2:#e9eef5; --panel:#ffffff;
+  --line:#b9c6d8; --line-soft:#d9e1ec;
+  --text:#0a2540; --muted:#4d6482;
+  --orange:#e85d0c; --orange-ink:#ffffff; --green:#3f7d0a;
+  --grid:rgba(10,37,64,.06);
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; color:var(--text); font:400 1rem/1.65 var(--body);
+  background:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.wrap{width:min(1120px,100% - 40px);margin:auto}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line-soft)}
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}
+.brand{display:flex;align-items:center;gap:12px;font:800 1.2rem/1 var(--display)}
+.logo{width:40px;height:40px;border-radius:11px;object-fit:contain}
+.navright{display:flex;align-items:center;gap:12px}
+.navlink,.theme{padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-weight:600}
+.navlink:hover,.theme:hover{border-color:var(--orange)}
+
+/* ---------- page header ---------- */
+main{padding-bottom:48px}
+.hero{padding:58px 0 30px}
+.eyebrow{font:600 .8rem var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--green)}
+h1,h2,h3{font-family:var(--display);line-height:1.1;letter-spacing:-.025em}
+h1{font-size:clamp(2.2rem,5vw,3.6rem);margin:10px 0 14px}
+.lead{max-width:720px;color:var(--muted);font-size:1.08rem;margin:0}
+.crumbs{margin:0 0 14px;font-size:.9rem;color:var(--muted)}
+.crumbs a{border-bottom:1px solid var(--line)}
+.crumbs a:hover{border-color:var(--orange);color:var(--text)}
+.section-head{margin:30px 0 18px}
+.section-head h2{font-size:1.65rem;margin:0 0 8px}
+.section-head p{color:var(--muted);margin:0}
+
+/* ---------- grid + cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card,.tool{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.card h3,.tool h3{font-size:1.2rem;margin:0 0 8px}
+.card p,.tool p{color:var(--muted);margin:0}
+.symbol{font-size:1.55rem;margin-bottom:12px}
+.status{display:inline-block;margin-top:16px;padding:5px 10px;border:1px solid var(--line);border-radius:99px;color:var(--green);font:600 .75rem var(--cond)}
+.status.planned{color:var(--muted)}
+
+/* kadi/kiungo cha tool kwenye hub */
+a.card{display:block;transition:transform .15s,border-color .15s}
+a.card:hover{border-color:var(--orange);transform:translateY(-2px)}
+.tool-list{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.tool-list a{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--bg2);font-weight:600;font-size:.95rem}
+.tool-list a:hover{border-color:var(--orange)}
+.tool-list .soon{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px dashed var(--line-soft);border-radius:10px;color:var(--muted);font-size:.95rem}
+.tool-list small{font:600 .72rem var(--cond);color:var(--muted)}
+
+/* ---------- tool layout + forms ---------- */
+.tool-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.tool{padding:26px}
+.stack{margin-top:18px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fields.mt{margin-top:18px}
+.field label{display:block;color:var(--muted);font-size:.9rem;margin-bottom:6px}
+.field input,.field select{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:var(--bg2);color:var(--text)}
+.hint{font-size:.82rem;color:var(--muted);margin:8px 0 0}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.btn{border:0;border-radius:10px;padding:12px 18px;font-weight:700}
+.btn.small{padding:6px 10px}
+.primary{background:var(--orange);color:var(--orange-ink)}
+.secondary{background:var(--bg2);border:1px solid var(--line);color:var(--text)}
+
+/* ---------- results ---------- */
+.result{display:flex;flex-direction:column;justify-content:center;min-height:100%;background:var(--bg2)}
+.result .value{font:800 clamp(2rem,5vw,3rem)/1.1 var(--display);color:var(--green);margin:10px 0}
+.result small{color:var(--muted)}
+.formula{margin-top:18px;padding:12px;border-left:3px solid var(--orange);background:color-mix(in srgb,var(--bg2) 65%,transparent);color:var(--muted);font-size:.9rem}
+.notice{margin-top:18px;padding:15px 18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.9rem}
+
+/* ---------- tables + chart ---------- */
+.head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.head-row h3{margin:0}
+.head-row .actions{margin:0}
+.table-scroll{overflow-x:auto;margin-top:16px}
+.data-table{width:100%;border-collapse:collapse;min-width:760px;font-size:.9rem}
+.data-table th{text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+.data-table td{padding:10px;border-bottom:1px solid var(--line-soft)}
+.data-table .num{text-align:right}
+.data-table .empty{padding:14px;color:var(--muted)}
+.chart-wrap{width:100%;overflow:hidden;margin-top:12px}
+.chart-wrap canvas{display:block;width:100%;max-width:100%;height:320px}
+
+/* ---------- footer ---------- */
+.footer{border-top:1px dashed var(--line);padding:22px 0 36px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* ---------- responsive ---------- */
+@media(max-width:800px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tool-layout{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .wrap{width:min(1120px,100% - 32px)}
+  nav{min-height:60px}
+  .brand{font-size:1rem}
+  .logo{width:34px;height:34px}
+  .navlink,.theme{font-size:.82rem;padding:8px}
+  .hero{padding:38px 0 18px}
+  .grid,.grid-2{grid-template-columns:1fr}
+  .fields{grid-template-columns:1fr}
+  .tool{padding:20px}
+}
