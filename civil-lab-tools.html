@@ -1,306 +1,128 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#071a2f">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071a2f">
 <meta name="description" content="Civil Lab Tools by MbiseCAD — practical civil engineering laboratory calculators and quality-control utilities.">
-<title>Civil Lab Tools — MbiseCAD</title><link rel="icon" type="image/png" href="icons/mbisecad-mark.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Civil Lab Tools — MbiseCAD</title>
+<link rel="icon" type="image/png" href="icons/mbisecad-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
-<style>
-:root{color-scheme:dark;--bg:#071a2f;--bg2:#0b2442;--panel:#0d2745;--line:#25507d;--line-soft:#1a3a5f;--text:#eef4fb;--muted:#9fb4cc;--orange:#ff7a2e;--orange-ink:#1b0e04;--green:#8fd14f;--grid:rgba(120,170,225,.10);--display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif}
-[data-theme="light"]{color-scheme:light;--bg:#f3f5f8;--bg2:#e9eef5;--panel:#fff;--line:#b9c6d8;--line-soft:#d9e1ec;--text:#0a2540;--muted:#4d6482;--orange:#e85d0c;--orange-ink:#fff;--green:#3f7d0a;--grid:rgba(10,37,64,.06)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);font:400 1rem/1.65 var(--body);background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;-webkit-font-smoothing:antialiased}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}.wrap{width:min(1120px,100% - 40px);margin:auto}:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
-.topbar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line-soft)}nav{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}.brand{display:flex;align-items:center;gap:12px;font:800 1.2rem/1 var(--display)}.logo{width:40px;height:40px;border-radius:11px;object-fit:contain}.navright{display:flex;align-items:center;gap:12px}.navlink,.theme{padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-weight:600}.navlink:hover,.theme:hover{border-color:var(--orange)}
-main{padding-bottom:48px}.hero{padding:58px 0 30px}.eyebrow{font:600 .8rem var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--green)}h1,h2,h3{font-family:var(--display);line-height:1.1;letter-spacing:-.025em}h1{font-size:clamp(2.2rem,5vw,3.6rem);margin:10px 0 14px}.lead{max-width:720px;color:var(--muted);font-size:1.08rem;margin:0}.section-head{margin:30px 0 18px}.section-head h2{font-size:1.65rem;margin:0 0 8px}.section-head p{color:var(--muted);margin:0}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.card,.tool{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}.card h3,.tool h3{font-size:1.2rem;margin:0 0 8px}.card p,.tool p{color:var(--muted);margin:0}.symbol{font-size:1.55rem;margin-bottom:12px}.status{display:inline-block;margin-top:16px;padding:5px 10px;border:1px solid var(--line);border-radius:99px;color:var(--green);font:600 .75rem var(--cond)}
-.tool-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.tool{padding:26px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;color:var(--muted);font-size:.9rem;margin-bottom:6px}.field input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:var(--bg2);color:var(--text)}.hint{font-size:.82rem;color:var(--muted);margin:8px 0 0}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.btn{border:0;border-radius:10px;padding:12px 18px;font-weight:700}.primary{background:var(--orange);color:var(--orange-ink)}.secondary{background:var(--bg2);border:1px solid var(--line);color:var(--text)}.result{display:flex;flex-direction:column;justify-content:center;min-height:100%;background:var(--bg2)}.result .value{font:800 clamp(2rem,5vw,3rem)/1.1 var(--display);color:var(--green);margin:10px 0}.result small{color:var(--muted)}.formula{margin-top:18px;padding:12px;border-left:3px solid var(--orange);background:color-mix(in srgb,var(--bg2) 65%,transparent);color:var(--muted);font-size:.9rem}.notice{margin-top:18px;padding:15px 18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.9rem}.footer{border-top:1px dashed var(--line);padding:22px 0 36px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tool-layout{grid-template-columns:1fr}}@media(max-width:560px){.wrap{width:min(1120px,100% - 32px)}nav{min-height:60px}.brand{font-size:1rem}.logo{width:34px;height:34px}.navlink,.theme{font-size:.82rem;padding:8px}.hero{padding:38px 0 18px}.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.tool{padding:20px}}
-</style></head>
-<body><header class="topbar"><div class="wrap"><nav><a class="brand" href="index.html"><img class="logo" src="icons/mbisecad-mark.png" alt=""><span>MbiseCAD</span></a><div class="navright"><a class="navlink" href="index.html#projects">← Projects</a><button class="theme" id="themeBtn" type="button">☀️ Light</button></div></nav></div></header>
-<main class="wrap"><section class="hero"><div class="eyebrow">MbiseCAD Engineering Utilities</div><h1>Civil Lab Tools</h1><p class="lead">Practical calculators and quality-control utilities for civil engineering laboratory and field work. This first release establishes the tool hub and starts with a Moisture Content Calculator.</p></section>
-<section><div class="section-head"><h2>Tool categories</h2><p>More calculators will be added and tested step by step.</p></div><div class="grid">
-<article class="card"><div class="symbol">🧱</div><h3>Soil Testing</h3><p>Moisture content, compaction, CBR, Atterberg limits and sieve analysis.</p><span class="status">First tool available</span></article>
-<article class="card"><div class="symbol">🏗️</div><h3>Concrete Testing</h3><p>Slump, cube strength and concrete test records.</p><span class="status">Planned</span></article>
-<article class="card"><div class="symbol">⚖️</div><h3>Aggregate Testing</h3><p>Grading, flakiness, elongation, ACV, AIV and specific gravity.</p><span class="status">Planned</span></article>
-<article class="card"><div class="symbol">🔩</div><h3>Steel Testing</h3><p>Tensile strength, yield strength, elongation and bar dimensions.</p><span class="status">Planned</span></article>
-<article class="card"><div class="symbol">📍</div><h3>Field Testing &amp; QC</h3><p>FDT, relative compaction, EV1/EV2 and test-point records.</p><span class="status">Planned</span></article>
-<article class="card"><div class="symbol">📄</div><h3>Reports &amp; Utilities</h3><p>Unit conversion, test registers and printable reports.</p><span class="status">Planned</span></article></div></section>
-<section id="moisture-content"><div class="section-head"><h2>Soil moisture content calculator</h2><p>Determine the water content of a soil sample from its measured masses.</p></div><div class="tool-layout">
-<div class="tool"><h3>Enter sample measurements</h3><p class="hint">Use the same mass unit for all three measurements (for example, grams).</p><div class="fields" style="margin-top:18px">
-<div class="field"><label for="tare">Mass of container (g)</label><input id="tare" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
-<div class="field"><label for="wet">Container + wet soil (g)</label><input id="wet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
-<div class="field"><label for="dry">Container + dry soil (g)</label><input id="dry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div></div>
-<div class="actions"><button class="btn primary" id="calculate" type="button">Calculate</button><button class="btn secondary" id="reset" type="button">Reset</button></div><p class="hint" id="message" role="status" aria-live="polite">Enter the three masses to calculate water content.</p></div>
-<aside class="tool result" aria-live="polite"><small>Calculated moisture content</small><div class="value" id="answer">— %</div><p id="breakdown">The result will appear here after calculation.</p><div class="formula">w (%) = [(Wet soil mass − Dry soil mass) ÷ Dry soil mass] × 100</div></aside></div>
-
-<section id="mdd-omc">
-  <div class="section-head">
-    <h2>MDD &amp; OMC compaction calculator</h2>
-    <p>Enter mould details once, then add the raw measurements for each compaction point.</p>
-  </div>
-  <div class="tool">
-    <h3>1. Mould information</h3>
-    <div class="fields" style="margin-top:16px">
-      <div class="field"><label for="mouldId">Mould ID</label><input id="mouldId" type="text" placeholder="e.g. Mould 01"></div>
-      <div class="field"><label for="mouldMass">Empty mould mass (g)</label><input id="mouldMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 4250"></div>
-      <div class="field"><label for="mouldVolume">Mould volume (cm³)</label><input id="mouldVolume" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 1000"></div>
-    </div>
-    <div class="formula">Wet soil mass = (Mould + compacted wet soil) − Empty mould mass<br>Wet density = Wet soil mass ÷ Mould volume<br>Dry density = Wet density ÷ (1 + moisture content ÷ 100)</div>
-  </div>
-
-  <div class="tool" style="margin-top:18px">
-    <h3>2. Compaction test points</h3>
-    <p class="hint">Use grams for all mass readings and cm³ for mould volume. Each row represents one moisture-content sample associated with one compacted mould specimen.</p>
-    <div class="fields" style="margin-top:18px">
-      <div class="field"><label for="pointLabel">Point label (optional)</label><input id="pointLabel" type="text" placeholder="e.g. Point 1"></div>
-      <div class="field"><label for="mouldWet">Mould + compacted wet soil (g)</label><input id="mouldWet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 5850"></div>
-      <div class="field"><label for="containerMass">Empty moisture container (g)</label><input id="containerMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
-      <div class="field"><label for="containerWet">Container + wet soil (g)</label><input id="containerWet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
-      <div class="field"><label for="containerDry">Container + dry soil (g)</label><input id="containerDry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div>
-    </div>
-    <div class="actions">
-      <button class="btn primary" id="addPoint" type="button">Add test point</button>
-      <button class="btn secondary" id="clearPointForm" type="button">Clear fields</button>
-    </div>
-    <p class="hint" id="mddMessage" role="status" aria-live="polite">Enter mould details and a test point to begin.</p>
-  </div>
-
-  <div class="tool" style="margin-top:18px">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <h3 style="margin:0">3. Test results</h3>
-      <div class="actions" style="margin:0">
-        <button class="btn secondary" id="calculateMdd" type="button">Calculate MDD &amp; OMC</button>
-        <button class="btn secondary" id="resetMdd" type="button">Reset test</button>
-      </div>
-    </div>
-    <div style="overflow-x:auto;margin-top:16px">
-      <table id="mddTable" style="width:100%;border-collapse:collapse;min-width:760px;font-size:.9rem">
-        <thead><tr>
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Point</th>
-          <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line)">Water content (%)</th>
-          <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line)">Wet density (g/cm³)</th>
-          <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line)">Dry density (g/cm³)</th>
-          <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line)">Action</th>
-        </tr></thead>
-        <tbody id="mddRows"><tr><td colspan="5" style="padding:14px;color:var(--muted)">No test points added yet.</td></tr></tbody>
-      </table>
-    </div>
-    <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px">
-      <div class="tool result"><small>Maximum Dry Density (MDD)</small><div class="value" id="mddValue">—</div><small>g/cm³</small></div>
-      <div class="tool result"><small>Optimum Moisture Content (OMC)</small><div class="value" id="omcValue">—</div><small>%</small></div>
-    </div>
-    <p class="hint" id="peakNote">Results will appear after calculating five valid test points.</p>
-  </div>
-
-  <div class="tool" style="margin-top:18px">
-    <h3>4. Compaction curve</h3>
-    <p class="hint">Dry density is plotted against moisture content. A smooth curve passes through every measured point (orange dots). MDD and OMC are read at the top of this curve (red dot), which can lie between points, and not simply at the highest measured dry density.</p>
-    <div style="width:100%;overflow:hidden;margin-top:12px">
-      <canvas id="compactionChart" height="320" style="display:block;width:100%;max-width:100%;height:320px"></canvas>
-    </div>
-  </div>
-  <div class="notice"><strong>Engineering note:</strong> The reported MDD and OMC are read at the top of a smooth curve (natural cubic spline) drawn through all measured dry-density/moisture-content points, not at the highest measured dry density. The top is searched only within the measured moisture-content range. Use enough valid points to define the curve, including points on both sides of the peak. Confirm mould calibration, compaction procedure, moisture determination, units and reporting requirements against the project specification and applicable test standard. This tool does not determine acceptance or replace engineering review.</div>
-</section>
-
-<div class="notice"><strong>Engineering note:</strong> This calculator performs the arithmetic only. Confirm the test procedure, drying requirements, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div></section></main>
-<footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
+<link rel="stylesheet" href="assets/shared.css">
 <script>
-const root=document.documentElement,themeBtn=document.getElementById('themeBtn');function setTheme(theme){root.dataset.theme=theme;themeBtn.textContent=theme==='dark'?'☀️ Light':'🌙 Dark';try{localStorage.setItem('mbisecad-theme',theme)}catch(e){}}let saved='dark';try{saved=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){}setTheme(saved);themeBtn.addEventListener('click',()=>{setTheme(root.dataset.theme==='dark'?'light':'dark');if(typeof drawCompactionChart==='function')drawCompactionChart();});document.getElementById('year').textContent=new Date().getFullYear();const ids=['tare','wet','dry'];
-document.getElementById('calculate').addEventListener('click',()=>{const [tare,wet,dry]=ids.map(id=>Number(document.getElementById(id).value)),message=document.getElementById('message');if(ids.some(id=>document.getElementById(id).value.trim()==='')||![tare,wet,dry].every(Number.isFinite)){message.textContent='Please enter all three measurements.';return;}const wetSoil=wet-tare,drySoil=dry-tare,water=wet-dry;if(tare<0||wetSoil<=0||drySoil<=0||water<0){message.textContent='Check the masses: wet soil must not be lighter than dry soil, and both soil masses must be positive.';return;}const content=water/drySoil*100;document.getElementById('answer').textContent=content.toFixed(2)+' %';document.getElementById('breakdown').textContent='Water mass: '+water.toFixed(2)+' g · Dry soil mass: '+drySoil.toFixed(2)+' g';message.textContent='Calculation completed.';});
-document.getElementById('reset').addEventListener('click',()=>{ids.forEach(id=>document.getElementById(id).value='');document.getElementById('answer').textContent='— %';document.getElementById('breakdown').textContent='The result will appear here after calculation.';document.getElementById('message').textContent='Enter the three masses to calculate water content.';});
+  /* Weka theme mapema ili kuepuka flash ya rangi */
+  try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
+</script>
+</head>
+<body>
 
-// MDD & OMC calculator
-const compactionPoints=[];
-const mddInputIds=['mouldId','mouldMass','mouldVolume','pointLabel','mouldWet','containerMass','containerWet','containerDry'];
-const numberFrom=(id)=>Number(document.getElementById(id).value);
-const fmt=(n,d=3)=>Number(n).toFixed(d);
-function renderMddRows(){
-  const body=document.getElementById('mddRows');
-  if(!compactionPoints.length){body.innerHTML='<tr><td colspan="5" style="padding:14px;color:var(--muted)">No test points added yet.</td></tr>';return;}
-  body.innerHTML=compactionPoints.map((p,i)=>`<tr>
-    <td style="padding:10px;border-bottom:1px solid var(--line-soft)">${escapeHtml(p.label)}</td>
-    <td style="text-align:right;padding:10px;border-bottom:1px solid var(--line-soft)">${fmt(p.w,2)}</td>
-    <td style="text-align:right;padding:10px;border-bottom:1px solid var(--line-soft)">${fmt(p.wetDensity,3)}</td>
-    <td style="text-align:right;padding:10px;border-bottom:1px solid var(--line-soft)">${fmt(p.dryDensity,3)}</td>
-    <td style="padding:10px;border-bottom:1px solid var(--line-soft)"><button class="btn secondary" type="button" data-remove-point="${i}" style="padding:6px 10px">Remove</button></td>
-  </tr>`).join('');
-}
-function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-let lastResult=null; // {peak, spline} - inatumika kuchora alama ya MDD/OMC baada ya Calculate
-const chartPoints=()=>compactionPoints.map(p=>({w:p.w,d:p.dryDensity})).sort((a,b)=>a.w-b.w);
-function curveSamples(s){
-  const out=[];
-  for(let i=0;i<s.h.length;i++){const steps=80;for(let k=(i===0?0:1);k<=steps;k++){const x=s.p[i].w+s.h[i]*k/steps;out.push({x,y:splineValue(s,i,x)});}}
-  return out;
-}
-function drawCompactionChart(){
-  const canvas=document.getElementById('compactionChart');
-  if(!canvas) return;
-  const rect=canvas.getBoundingClientRect(),W=Math.max(300,rect.width),H=320,dpr=window.devicePixelRatio||1;
-  canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
-  const cs=getComputedStyle(document.documentElement),muted=cs.getPropertyValue('--muted').trim(),grid=cs.getPropertyValue('--line-soft').trim(),axis=cs.getPropertyValue('--line').trim(),green=cs.getPropertyValue('--green').trim(),orange=cs.getPropertyValue('--orange').trim(),ink=cs.getPropertyValue('--text').trim();
-  const pts=chartPoints();
-  ctx.font='12px IBM Plex Sans, sans-serif';ctx.fillStyle=muted;ctx.textBaseline='alphabetic';
-  if(pts.length<2){ctx.fillText('Add at least two valid points to display the curve.',18,40);return;}
-  const unique=pts.every((p,i)=>i===0||p.w-pts[i-1].w>1e-8);
-  let spline=null,samples=pts.map(p=>({x:p.w,y:p.d}));
-  if(unique){try{spline=buildNaturalSpline(pts);samples=curveSamples(spline);}catch(e){spline=null;}}
-  const peak=(lastResult&&spline)?lastResult.peak:null;
-  const xs=samples.map(v=>v.x),ys=samples.map(v=>v.y).concat(pts.map(p=>p.d));
-  const xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
-  const xpad=(xmax-xmin)*.06||1,ypad=(ymax-ymin)*.18||.05;
-  const x0=xmin-xpad,x1=xmax+xpad,y0=ymin-ypad,y1=ymax+ypad;
-  const L=58,R=18,T=22,B=44;
-  const X=v=>L+(v-x0)/(x1-x0)*(W-L-R),Y=v=>H-B-(v-y0)/(y1-y0)*(H-T-B);
-  // grid + tick labels
-  ctx.lineWidth=1;ctx.strokeStyle=grid;
-  for(let i=0;i<=4;i++){const yv=y0+(y1-y0)*i/4,y=Y(yv);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();ctx.textAlign='right';ctx.fillText(yv.toFixed(3),L-8,y+4);}
-  for(let i=0;i<=5;i++){const xv=x0+(x1-x0)*i/5,x=X(xv);ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-B);ctx.stroke();ctx.textAlign='center';ctx.fillText(xv.toFixed(1),x,H-B+16);}
-  ctx.strokeStyle=axis;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,H-B);ctx.lineTo(W-R,H-B);ctx.stroke();
-  ctx.fillStyle=muted;ctx.textAlign='center';ctx.fillText('Moisture content (%)',(L+W-R)/2,H-6);
-  ctx.save();ctx.translate(14,(T+H-B)/2);ctx.rotate(-Math.PI/2);ctx.fillText('Dry density (g/cm³)',0,0);ctx.restore();
-  // smooth curve through every point
-  ctx.strokeStyle=green;ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();
-  samples.forEach((v,i)=>{if(i===0)ctx.moveTo(X(v.x),Y(v.y));else ctx.lineTo(X(v.x),Y(v.y));});ctx.stroke();
-  // peak guides (MDD / OMC) read from the top of the curve
-  if(peak){
-    ctx.setLineDash([5,4]);ctx.lineWidth=1.2;ctx.strokeStyle=ink;
-    ctx.beginPath();ctx.moveTo(X(peak.x),Y(peak.y));ctx.lineTo(X(peak.x),H-B);ctx.moveTo(X(peak.x),Y(peak.y));ctx.lineTo(L,Y(peak.y));ctx.stroke();ctx.setLineDash([]);
-  }
-  // measured points
-  pts.forEach(p=>{ctx.beginPath();ctx.arc(X(p.w),Y(p.d),5.5,0,Math.PI*2);ctx.fillStyle=orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=cs.getPropertyValue('--panel').trim()||'#fff';ctx.stroke();});
-  if(peak){
-    ctx.beginPath();ctx.arc(X(peak.x),Y(peak.y),6.5,0,Math.PI*2);ctx.fillStyle='#ef4444';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=cs.getPropertyValue('--panel').trim()||'#fff';ctx.stroke();
-    ctx.fillStyle=ink;ctx.font='600 12px IBM Plex Sans, sans-serif';
-    const label='MDD '+peak.y.toFixed(3)+' · OMC '+peak.x.toFixed(2)+'%';
-    const tw=ctx.measureText(label).width,lx=Math.min(W-R-tw,Math.max(L+4,X(peak.x)-tw/2)),ly=Math.max(T+12,Y(peak.y)-14);
-    ctx.textAlign='left';ctx.fillText(label,lx,ly);
-  }
-  ctx.textAlign='left';
-}
-document.getElementById('addPoint').addEventListener('click',()=>{
-  const msg=document.getElementById('mddMessage'),mass=numberFrom('mouldMass'),volume=numberFrom('mouldVolume'),mouldWet=numberFrom('mouldWet'),tare=numberFrom('containerMass'),containerWet=numberFrom('containerWet'),containerDry=numberFrom('containerDry');
-  const required=['mouldMass','mouldVolume','mouldWet','containerMass','containerWet','containerDry'];
-  if(required.some(id=>document.getElementById(id).value.trim()==='')||!required.every(id=>Number.isFinite(numberFrom(id)))){msg.textContent='Enter all required measurements using numbers.';return;}
-  const wetSoil=mouldWet-mass,wetSample=containerWet-tare,drySample=containerDry-tare,water=containerWet-containerDry;
-  if(mass<0||volume<=0||wetSoil<=0||wetSample<=0||drySample<=0||water<0){msg.textContent='Check the readings: mould volume and soil masses must be positive, and wet sample mass cannot be less than dry sample mass.';return;}
-  const w=water/drySample*100,wetDensity=wetSoil/volume,dryDensity=wetDensity/(1+w/100);
-  if(![w,wetDensity,dryDensity].every(Number.isFinite)||dryDensity<=0){msg.textContent='These measurements do not produce a valid result. Please check the values and units.';return;}
-  const label=document.getElementById('pointLabel').value.trim()||`Point ${compactionPoints.length+1}`;
-  compactionPoints.push({label,w,wetDensity,dryDensity});
-  lastResult=null;renderMddRows();drawCompactionChart();
-  document.getElementById('mddMessage').textContent=`${label} added. Add the next compaction point.`;
-  ['pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Recalculate after adding or removing test points.';
-});
-document.getElementById('clearPointForm').addEventListener('click',()=>['pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(id=>document.getElementById(id).value=''));
-document.getElementById('mddRows').addEventListener('click',e=>{
-  const btn=e.target.closest('[data-remove-point]');if(!btn)return;
-  compactionPoints.splice(Number(btn.dataset.removePoint),1);lastResult=null;renderMddRows();drawCompactionChart();
-  document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Recalculate after changing test points.';
-});
+<header class="topbar"><div class="wrap"><nav>
+  <a class="brand" href="index.html"><img class="logo" src="icons/mbisecad-mark.png" alt=""><span>MbiseCAD</span></a>
+  <div class="navright">
+    <a class="navlink" href="index.html#projects">← Projects</a>
+    <button class="theme" id="themeBtn" type="button">☀️ Light</button>
+  </div>
+</nav></div></header>
 
-// Natural cubic spline: smooth interpolation through every measured point.
-function buildNaturalSpline(points){
-  const p = [...points].sort((a,b)=>a.w-b.w);
-  const n=p.length, h=[], alpha=[], l=Array(n).fill(0),
-        mu=Array(n).fill(0), z=Array(n).fill(0),
-        a=p.map(v=>v.d), b=Array(n-1).fill(0),
-        c=Array(n).fill(0), d=Array(n-1).fill(0);
-  for(let i=0;i<n-1;i++){
-    h[i]=p[i+1].w-p[i].w;
-    if(!(h[i]>0)) throw new Error('Moisture content values must be unique.');
-  }
-  for(let i=1;i<n-1;i++){
-    alpha[i]=3/h[i]*(a[i+1]-a[i])-3/h[i-1]*(a[i]-a[i-1]);
-  }
-  l[0]=1;
-  for(let i=1;i<n-1;i++){
-    l[i]=2*(p[i+1].w-p[i-1].w)-h[i-1]*mu[i-1];
-    if(Math.abs(l[i])<1e-12) throw new Error('Unable to build spline from these points.');
-    mu[i]=h[i]/l[i];
-    z[i]=(alpha[i]-h[i-1]*z[i-1])/l[i];
-  }
-  l[n-1]=1;
-  for(let j=n-2;j>=0;j--){
-    c[j]=z[j]-mu[j]*c[j+1];
-    b[j]=(a[j+1]-a[j])/h[j]-h[j]*(c[j+1]+2*c[j])/3;
-    d[j]=(c[j+1]-c[j])/(3*h[j]);
-  }
-  return {p,a,b,c,d,h};
-}
-function splineValue(s,i,x){
-  const t=x-s.p[i].w;
-  return s.a[i]+s.b[i]*t+s.c[i]*t*t+s.d[i]*t*t*t;
-}
-function findSplinePeak(s){
-  const candidates=[];
-  for(let i=0;i<s.h.length;i++){
-    const A=3*s.d[i], B=2*s.c[i], C=s.b[i], roots=[];
-    if(Math.abs(A)<1e-12){
-      if(Math.abs(B)>1e-12) roots.push(-C/B);
-    }else{
-      const disc=B*B-4*A*C;
-      if(disc>=0){
-        const q=Math.sqrt(disc);
-        roots.push((-B+q)/(2*A),(-B-q)/(2*A));
-      }
-    }
-    candidates.push({x:s.p[i].w,y:s.a[i]});
-    for(const t of roots){
-      if(t>1e-9 && t<s.h[i]-1e-9){
-        const x=s.p[i].w+t;
-        candidates.push({x,y:splineValue(s,i,x)});
-      }
-    }
-  }
-  const last=s.p.length-1;
-  candidates.push({x:s.p[last].w,y:s.p[last].d});
-  return candidates.reduce((best,v)=>v.y>best.y?v:best);
-}
-document.getElementById('calculateMdd').addEventListener('click',()=>{
-  const msg=document.getElementById('mddMessage'),note=document.getElementById('peakNote');
-  if(compactionPoints.length<5){
-    msg.textContent='Enter all five compaction test points before calculating MDD and OMC.';
-    return;
-  }
-  const pts=chartPoints();
-  if(pts.some(p=>!Number.isFinite(p.w)||!Number.isFinite(p.d))){
-    msg.textContent='Check all readings. Every point must have valid moisture content and dry density.';
-    return;
-  }
-  for(let i=1;i<pts.length;i++){
-    if(pts[i].w-pts[i-1].w<1e-8){
-      msg.textContent='Moisture content values must be different for every point.';
-      return;
-    }
-  }
-  try{
-    const spline=buildNaturalSpline(pts);
-    const peak=findSplinePeak(spline);
-    lastResult={peak,spline};
-    document.getElementById('mddValue').textContent=peak.y.toFixed(3);
-    document.getElementById('omcValue').textContent=peak.x.toFixed(2);
-    drawCompactionChart();
-    const atEdge=peak.x<=pts[0].w+1e-6||peak.x>=pts[pts.length-1].w-1e-6;
-    if(atEdge){
-      msg.textContent='The curve has no peak inside your data range. Add test points on both sides of the maximum before reporting MDD and OMC.';
-      note.textContent='Warning: the highest point of the curve is at the edge of the measured range ('+peak.y.toFixed(3)+' g/cm³ at '+peak.x.toFixed(2)+'%), so it is not a true peak.';
-    }else{
-      msg.textContent='MDD and OMC are read at the top of the smooth curve that passes through every measured point.';
-      note.textContent='Top of curve: MDD '+peak.y.toFixed(3)+' g/cm³ at OMC '+peak.x.toFixed(2)+'% moisture content.';
-    }
-  }catch(err){
-    msg.textContent=err.message||'Unable to calculate the curve. Check the entered data.';
-  }
-});
-document.getElementById('resetMdd').addEventListener('click',()=>{
-  compactionPoints.length=0;lastResult=null;
-  ['mouldId','mouldMass','mouldVolume','pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(id=>document.getElementById(id).value='');
-  renderMddRows();drawCompactionChart();document.getElementById('mddValue').textContent='—';document.getElementById('omcValue').textContent='—';document.getElementById('peakNote').textContent='Results will appear after calculating five valid test points.';document.getElementById('mddMessage').textContent='Test data cleared.';
-});
-window.addEventListener('resize',drawCompactionChart);
-drawCompactionChart();
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">MbiseCAD Engineering Utilities</div>
+    <h1>Civil Lab Tools</h1>
+    <p class="lead">Practical calculators and quality-control utilities for civil engineering laboratory and field work. Each tool opens on its own page, and new tools are added step by step after testing.</p>
+  </section>
 
-</script></body></html>
+  <section>
+    <div class="section-head">
+      <h2>Tool categories</h2>
+      <p>Tools marked “Ready” are available now. The rest are planned.</p>
+    </div>
+
+    <div class="grid">
+
+      <article class="card">
+        <div class="symbol">🧱</div>
+        <h3>Soil Testing</h3>
+        <p>Moisture content, compaction, CBR, Atterberg limits and sieve analysis.</p>
+        <ul class="tool-list">
+          <li><a href="tools/moisture-content.html"><span>Moisture content</span><small>Ready</small></a></li>
+          <li><a href="tools/mdd-omc.html"><span>MDD &amp; OMC compaction</span><small>Ready</small></a></li>
+          <li><div class="soon"><span>CBR</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Atterberg limits</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Sieve analysis</span><small>Soon</small></div></li>
+        </ul>
+        <span class="status">2 tools available</span>
+      </article>
+
+      <article class="card">
+        <div class="symbol">🏗️</div>
+        <h3>Concrete Testing</h3>
+        <p>Slump, cube strength and concrete test records.</p>
+        <ul class="tool-list">
+          <li><div class="soon"><span>Slump</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Cube strength</span><small>Soon</small></div></li>
+        </ul>
+        <span class="status planned">Planned</span>
+      </article>
+
+      <article class="card">
+        <div class="symbol">⚖️</div>
+        <h3>Aggregate Testing</h3>
+        <p>Grading, flakiness, elongation, ACV, AIV and specific gravity.</p>
+        <ul class="tool-list">
+          <li><div class="soon"><span>Grading</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Flakiness &amp; elongation</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>ACV &amp; AIV</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Specific gravity</span><small>Soon</small></div></li>
+        </ul>
+        <span class="status planned">Planned</span>
+      </article>
+
+      <article class="card">
+        <div class="symbol">🔩</div>
+        <h3>Steel Testing</h3>
+        <p>Tensile strength, yield strength, elongation and bar dimensions.</p>
+        <ul class="tool-list">
+          <li><div class="soon"><span>Tensile &amp; yield strength</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Elongation</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Bar dimensions</span><small>Soon</small></div></li>
+        </ul>
+        <span class="status planned">Planned</span>
+      </article>
+
+      <article class="card">
+        <div class="symbol">📍</div>
+        <h3>Field Testing &amp; QC</h3>
+        <p>FDT, relative compaction, EV1/EV2 and test-point records.</p>
+        <ul class="tool-list">
+          <li><div class="soon"><span>FDT (sand cone)</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Relative compaction</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>EV1 / EV2</span><small>Soon</small></div></li>
+        </ul>
+        <span class="status planned">Planned</span>
+      </article>
+
+      <article class="card">
+        <div class="symbol">📄</div>
+        <h3>Reports &amp; Utilities</h3>
+        <p>Unit conversion, test registers and printable reports.</p>
+        <ul class="tool-list">
+          <li><div class="soon"><span>Unit conversion</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Test register</span><small>Soon</small></div></li>
+          <li><div class="soon"><span>Printable reports</span><small>Soon</small></div></li>
+        </ul>
+        <span class="status planned">Planned</span>
+      </article>
+
+    </div>
+
+    <div class="notice"><strong>Engineering note:</strong> These tools perform the arithmetic only. Confirm the test procedure, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div>
+  </section>
+</main>
+
+<footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
+
+<script src="assets/shared.js"></script>
+</body>
+</html>
