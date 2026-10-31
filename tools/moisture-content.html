@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#071a2f">
-<meta name="description" content="Soil moisture content calculator by MbiseCAD — multiple samples with average water content.">
+<meta name="description" content="Soil moisture content calculator by MbiseCAD — one or more samples with average water content.">
 <title>Moisture Content Calculator — MbiseCAD</title>
 <link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +34,7 @@
     <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / Moisture Content</p>
     <div class="eyebrow">Soil Testing</div>
     <h1>Moisture Content Calculator</h1>
-    <p class="lead">Add at least two samples. Each sample gets its own water content, and the average is calculated from all samples.</p>
+    <p class="lead">Add a sample to see its moisture content. Add more samples to get the average of all samples.</p>
   </section>
 
   <section id="moisture-content">
@@ -79,8 +79,8 @@
     <div class="tool stack">
       <h3>3. Result</h3>
       <div class="grid-2 stack">
-        <div class="tool result"><small>Average moisture content</small><div class="value" id="avgValue">— %</div><small id="avgNote">Add at least 2 samples.</small></div>
-        <div class="tool result"><small>Samples used / Range</small><div class="value" id="countValue">—</div><small id="rangeNote">Range appears with 2 or more samples.</small></div>
+        <div class="tool result"><small id="avgTitle">Moisture content</small><div class="value" id="avgValue">— %</div><small id="avgNote">Add a sample to see the result.</small></div>
+        <div class="tool result"><small>Samples used</small><div class="value" id="countValue">—</div><small id="rangeNote">Range appears with 2 or more samples.</small></div>
       </div>
       <div class="formula">w (%) = [(Wet soil mass − Dry soil mass) ÷ Dry soil mass] × 100<br>Average w (%) = sum of all w ÷ number of samples</div>
     </div>
@@ -94,7 +94,6 @@
 <script src="../assets/shared.js"></script>
 <script>
 (function(){
-  var MIN_SAMPLES=2;
   var samples=[];
   var fieldIds=['label','tare','wet','dry'];
 
@@ -124,13 +123,25 @@
 
   function updateResult(){
     var n=samples.length;
-    if(n<MIN_SAMPLES){
+
+    if(n===0){
+      el('avgTitle').textContent='Moisture content';
       el('avgValue').textContent='— %';
-      el('avgNote').textContent=n===0?'Add at least 2 samples.':'Add '+(MIN_SAMPLES-n)+' more sample to get the average.';
-      el('countValue').textContent=n?String(n):'—';
+      el('avgNote').textContent='Add a sample to see the result.';
+      el('countValue').textContent='—';
       el('rangeNote').textContent='Range appears with 2 or more samples.';
       return;
     }
+
+    if(n===1){
+      el('avgTitle').textContent='Moisture content';
+      el('avgValue').textContent=samples[0].w.toFixed(2)+' %';
+      el('avgNote').textContent='Result of '+samples[0].label+'. Add another sample to get the average.';
+      el('countValue').textContent='1';
+      el('rangeNote').textContent='Range appears with 2 or more samples.';
+      return;
+    }
+
     var sum=0,min=Infinity,max=-Infinity;
     samples.forEach(function(s){
       sum+=s.w;
@@ -138,6 +149,7 @@
       if(s.w>max)max=s.w;
     });
     var avg=sum/n;
+    el('avgTitle').textContent='Average moisture content';
     el('avgValue').textContent=avg.toFixed(2)+' %';
     el('avgNote').textContent='Average of '+n+' samples';
     el('countValue').textContent=String(n);
@@ -170,7 +182,7 @@
     renderRows();
     updateResult();
     clearForm();
-    message.textContent=label+' added ('+w.toFixed(2)+' %). '+(samples.length<MIN_SAMPLES?'Add the next sample.':'You can add more samples or read the average below.');
+    message.textContent=label+' added ('+w.toFixed(2)+' %). '+(samples.length===1?'Add another sample to get the average, or use this result.':'Add more samples or read the average below.');
   });
 
   el('clearForm').addEventListener('click',clearForm);
