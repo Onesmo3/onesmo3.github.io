@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#071a2f">
-<meta name="description" content="Soil moisture content calculator by MbiseCAD — determine water content from measured masses.">
+<meta name="description" content="Soil moisture content calculator by MbiseCAD — multiple samples with average water content.">
 <title>Moisture Content Calculator — MbiseCAD</title>
 <link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<style>
+  #mcTable{min-width:520px}
+</style>
 <script>
   /* Weka theme mapema ili kuepuka flash ya rangi */
   try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
@@ -31,35 +34,58 @@
     <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / Moisture Content</p>
     <div class="eyebrow">Soil Testing</div>
     <h1>Moisture Content Calculator</h1>
-    <p class="lead">Determine the water content of a soil sample from its measured masses.</p>
+    <p class="lead">Add at least two samples. Each sample gets its own water content, and the average is calculated from all samples.</p>
   </section>
 
   <section id="moisture-content">
-    <div class="tool-layout">
-      <div class="tool">
-        <h3>Enter sample measurements</h3>
-        <p class="hint">Use the same mass unit for all three measurements (for example, grams).</p>
-        <div class="fields mt">
-          <div class="field"><label for="tare">Mass of container (g)</label><input id="tare" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
-          <div class="field"><label for="wet">Container + wet soil (g)</label><input id="wet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
-          <div class="field"><label for="dry">Container + dry soil (g)</label><input id="dry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div>
-        </div>
-        <div class="actions">
-          <button class="btn primary" id="calculate" type="button">Calculate</button>
-          <button class="btn secondary" id="reset" type="button">Reset</button>
-        </div>
-        <p class="hint" id="message" role="status" aria-live="polite">Enter the three masses to calculate water content.</p>
-      </div>
 
-      <aside class="tool result" aria-live="polite">
-        <small>Calculated moisture content</small>
-        <div class="value" id="answer">— %</div>
-        <p id="breakdown">The result will appear here after calculation.</p>
-        <div class="formula">w (%) = [(Wet soil mass − Dry soil mass) ÷ Dry soil mass] × 100</div>
-      </aside>
+    <div class="tool">
+      <h3>1. Add a sample</h3>
+      <p class="hint">Use the same mass unit for all measurements (for example, grams).</p>
+      <div class="fields mt">
+        <div class="field"><label for="label">Sample label (optional)</label><input id="label" type="text" placeholder="e.g. Sample 1"></div>
+        <div class="field"><label for="tare">Mass of container (g)</label><input id="tare" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
+        <div class="field"><label for="wet">Container + wet soil (g)</label><input id="wet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
+        <div class="field"><label for="dry">Container + dry soil (g)</label><input id="dry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="addSample" type="button">Add sample</button>
+        <button class="btn secondary" id="clearForm" type="button">Clear fields</button>
+      </div>
+      <p class="hint" id="message" role="status" aria-live="polite">Enter the measurements for the first sample.</p>
     </div>
 
-    <div class="notice"><strong>Engineering note:</strong> This calculator performs the arithmetic only. Confirm the test procedure, drying requirements, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div>
+    <div class="tool stack">
+      <div class="head-row">
+        <h3>2. Samples</h3>
+        <div class="actions">
+          <button class="btn secondary" id="reset" type="button">Reset all</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="mcTable">
+          <thead><tr>
+            <th>Sample</th>
+            <th class="num">Water mass (g)</th>
+            <th class="num">Dry soil mass (g)</th>
+            <th class="num">Moisture content (%)</th>
+            <th>Action</th>
+          </tr></thead>
+          <tbody id="rows"><tr><td colspan="5" class="empty">No samples added yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tool stack">
+      <h3>3. Result</h3>
+      <div class="grid-2 stack">
+        <div class="tool result"><small>Average moisture content</small><div class="value" id="avgValue">— %</div><small id="avgNote">Add at least 2 samples.</small></div>
+        <div class="tool result"><small>Samples used / Range</small><div class="value" id="countValue">—</div><small id="rangeNote">Range appears with 2 or more samples.</small></div>
+      </div>
+      <div class="formula">w (%) = [(Wet soil mass − Dry soil mass) ÷ Dry soil mass] × 100<br>Average w (%) = sum of all w ÷ number of samples</div>
+    </div>
+
+    <div class="notice"><strong>Engineering note:</strong> This calculator performs the arithmetic only. Confirm the test procedure, drying requirements, number of determinations, allowed difference between samples, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div>
   </section>
 </main>
 
@@ -68,18 +94,68 @@
 <script src="../assets/shared.js"></script>
 <script>
 (function(){
-  var ids=['tare','wet','dry'];
-  var el=function(id){return document.getElementById(id)};
+  var MIN_SAMPLES=2;
+  var samples=[];
+  var fieldIds=['label','tare','wet','dry'];
 
-  el('calculate').addEventListener('click',function(){
+  function el(id){return document.getElementById(id)}
+  function escapeHtml(value){
+    return String(value).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+
+  function renderRows(){
+    var body=el('rows');
+    if(!samples.length){
+      body.innerHTML='<tr><td colspan="5" class="empty">No samples added yet.</td></tr>';
+      return;
+    }
+    body.innerHTML=samples.map(function(s,i){
+      return '<tr>'+
+        '<td>'+escapeHtml(s.label)+'</td>'+
+        '<td class="num">'+s.water.toFixed(2)+'</td>'+
+        '<td class="num">'+s.drySoil.toFixed(2)+'</td>'+
+        '<td class="num">'+s.w.toFixed(2)+'</td>'+
+        '<td><button class="btn secondary small" type="button" data-remove="'+i+'">Remove</button></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function updateResult(){
+    var n=samples.length;
+    if(n<MIN_SAMPLES){
+      el('avgValue').textContent='— %';
+      el('avgNote').textContent=n===0?'Add at least 2 samples.':'Add '+(MIN_SAMPLES-n)+' more sample to get the average.';
+      el('countValue').textContent=n?String(n):'—';
+      el('rangeNote').textContent='Range appears with 2 or more samples.';
+      return;
+    }
+    var sum=0,min=Infinity,max=-Infinity;
+    samples.forEach(function(s){
+      sum+=s.w;
+      if(s.w<min)min=s.w;
+      if(s.w>max)max=s.w;
+    });
+    var avg=sum/n;
+    el('avgValue').textContent=avg.toFixed(2)+' %';
+    el('avgNote').textContent='Average of '+n+' samples';
+    el('countValue').textContent=String(n);
+    el('rangeNote').textContent='Range: '+(max-min).toFixed(2)+' % (lowest '+min.toFixed(2)+' %, highest '+max.toFixed(2)+' %)';
+  }
+
+  function clearForm(){fieldIds.forEach(function(id){el(id).value=''})}
+
+  el('addSample').addEventListener('click',function(){
     var message=el('message');
-    if(ids.some(function(id){return el(id).value.trim()===''})){
+    var numIds=['tare','wet','dry'];
+    if(numIds.some(function(id){return el(id).value.trim()===''})){
       message.textContent='Please enter all three measurements.';
       return;
     }
-    var v=ids.map(function(id){return Number(el(id).value)});
+    var v=numIds.map(function(id){return Number(el(id).value)});
     if(!v.every(Number.isFinite)){
-      message.textContent='Please enter all three measurements.';
+      message.textContent='Please enter all three measurements as numbers.';
       return;
     }
     var tare=v[0],wet=v[1],dry=v[2];
@@ -88,17 +164,32 @@
       message.textContent='Check the masses: wet soil must not be lighter than dry soil, and both soil masses must be positive.';
       return;
     }
-    var content=water/drySoil*100;
-    el('answer').textContent=content.toFixed(2)+' %';
-    el('breakdown').textContent='Water mass: '+water.toFixed(2)+' g · Dry soil mass: '+drySoil.toFixed(2)+' g';
-    message.textContent='Calculation completed.';
+    var w=water/drySoil*100;
+    var label=el('label').value.trim()||('Sample '+(samples.length+1));
+    samples.push({label:label,water:water,drySoil:drySoil,w:w});
+    renderRows();
+    updateResult();
+    clearForm();
+    message.textContent=label+' added ('+w.toFixed(2)+' %). '+(samples.length<MIN_SAMPLES?'Add the next sample.':'You can add more samples or read the average below.');
+  });
+
+  el('clearForm').addEventListener('click',clearForm);
+
+  el('rows').addEventListener('click',function(e){
+    var btn=e.target.closest('[data-remove]');
+    if(!btn) return;
+    samples.splice(Number(btn.dataset.remove),1);
+    renderRows();
+    updateResult();
+    el('message').textContent='Sample removed.';
   });
 
   el('reset').addEventListener('click',function(){
-    ids.forEach(function(id){el(id).value=''});
-    el('answer').textContent='— %';
-    el('breakdown').textContent='The result will appear here after calculation.';
-    el('message').textContent='Enter the three masses to calculate water content.';
+    samples.length=0;
+    clearForm();
+    renderRows();
+    updateResult();
+    el('message').textContent='All samples cleared. Enter the measurements for the first sample.';
   });
 })();
 </script>
