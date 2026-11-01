@@ -1,1 +1,579 @@
 
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071a2f">
+<meta name="description" content="Sieve analysis calculator by MbiseCAD — percentage passing, grading modulus, specification limits and grading curve.">
+<title>Sieve Analysis — MbiseCAD</title>
+<link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/shared.css">
+<style>
+  :root{--bad:#ff6b6b;--limit:#6cb6ff}
+  [data-theme="light"]{--bad:#c62828;--limit:#1f6fb2}
+  #sieveTable{min-width:880px}
+  #limitTable{min-width:0;max-width:520px}
+  .data-table input{width:100%;min-width:90px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);color:var(--text)}
+  .data-table th,.data-table td.lbl{white-space:nowrap}
+  .data-table td.lbl{font-weight:600}
+  .data-table tr.sub td{font-weight:600;background:color-mix(in srgb,var(--bg2) 70%,transparent)}
+  .ok{color:var(--green);font-weight:700}
+  .bad{color:var(--bad);font-weight:700}
+  .result .value.sm{font-size:clamp(1.3rem,3.4vw,1.8rem)}
+  .result .value.bad{color:var(--bad)}
+  details.tool>summary{cursor:pointer;font:700 1.2rem/1.2 var(--display);letter-spacing:-.02em}
+  .inline{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.9rem;color:var(--muted)}
+</style>
+<script>
+  /* Weka theme mapema ili kuepuka flash ya rangi */
+  try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
+</script>
+</head>
+<body>
+
+<header class="topbar"><div class="wrap"><nav>
+  <a class="brand" href="../index.html"><img class="logo" src="../icons/mbisecad-mark.png" alt=""><span>MbiseCAD</span></a>
+  <div class="navright">
+    <a class="navlink" href="../civil-lab-tools.html">← Civil Lab Tools</a>
+    <button class="theme" id="themeBtn" type="button">☀️ Light</button>
+  </div>
+</nav></div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / Sieve Analysis</p>
+    <div class="eyebrow">Soil Testing</div>
+    <h1>Sieve Analysis &amp; Grading Curve</h1>
+    <p class="lead">Enter the mass retained on each sieve. The tool calculates percentage retained, cumulative percentage passing, grading modulus, checks specification limits and plots the grading curve.</p>
+  </section>
+
+  <section id="sieve-analysis">
+
+    <div class="tool">
+      <h3>1. Test form and sample</h3>
+      <div class="fields mt">
+        <div class="field"><label for="formSel">Test form</label>
+          <select id="formSel">
+            <option value="B">Railway — ASTM 422-63 (with limits)</option>
+            <option value="A">BS 1377 — riffled sample (m1 to m4)</option>
+          </select>
+        </div>
+        <div class="field"><label for="sampleNo">Sample no. (optional)</label><input id="sampleNo" type="text" placeholder="e.g. 2026/08/002"></div>
+        <div class="field"><label for="material">Material from (optional)</label><input id="material" type="text" placeholder="e.g. Borrow Pit"></div>
+      </div>
+      <p class="hint" id="formHint"></p>
+    </div>
+
+    <div class="tool stack">
+      <h3>2. Masses</h3>
+      <div class="fields mt" id="massFields"></div>
+      <div class="formula" id="derived">—</div>
+    </div>
+
+    <details class="tool stack" id="limitBox">
+      <summary>Specification limits (% passing) <small id="limCount" class="hint"></small></summary>
+      <p class="hint">Leave a box empty if there is no lower or upper limit for that sieve. Sieves with limits are the ones plotted on the grading curve. Limits are saved in this browser for each form.</p>
+      <div class="table-scroll">
+        <table class="data-table" id="limitTable">
+          <thead><tr><th>Sieve</th><th>Lower limit (%)</th><th>Upper limit (%)</th></tr></thead>
+          <tbody id="limitRows"></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button class="btn secondary" id="limitDefault" type="button">Restore defaults</button>
+        <button class="btn secondary" id="limitClear" type="button">Clear all limits</button>
+      </div>
+    </details>
+
+    <div class="tool stack">
+      <div class="head-row">
+        <h3>3. Mass retained on each sieve</h3>
+        <div class="actions"><button class="btn secondary" id="resetAll" type="button">Reset all</button></div>
+      </div>
+      <p class="hint">Enter 0 for sieves where nothing is retained. A blank sieve is counted as 0 g.</p>
+      <div class="table-scroll">
+        <table class="data-table" id="sieveTable">
+          <thead id="sHead"></thead>
+          <tbody id="sBody"></tbody>
+          <tfoot id="sFoot"></tfoot>
+        </table>
+      </div>
+      <p class="hint" id="message" role="status" aria-live="polite">Enter the initial dry mass m1 to begin.</p>
+    </div>
+
+    <div class="tool stack">
+      <h3>4. Results</h3>
+      <div class="grid stack">
+        <div class="tool result"><small>Grading Modulus (GM)</small><div class="value" id="gmVal">—</div><small>(300 − %&lt;2 − %&lt;0.425 − %&lt;0.075) ÷ 100</small></div>
+        <div class="tool result"><small>Grading Coefficient (GC)</small><div class="value" id="gcVal">—</div><small id="gcNote">((%&lt;28 − %&lt;0.425) × %&lt;5) ÷ 100</small></div>
+        <div class="tool result"><small>Specification limits</small><div class="value sm" id="limVal">—</div><small id="limNote">No limits set.</small></div>
+      </div>
+      <div class="formula">% retained = corrected mass ÷ m1 × 100<br>Cumulative % passing = 100 − cumulative % retained<br>%&lt;d means the cumulative % passing the sieve of size d (mm)</div>
+    </div>
+
+    <div class="tool stack">
+      <h3>5. Grading curve</h3>
+      <p class="hint">Cumulative % passing is plotted against sieve size on a logarithmic scale. The blue dashed lines are the specification limits. A red point is outside the limits.</p>
+      <label class="inline"><input type="checkbox" id="plotAll"> Plot all sieves (by default only sieves with limits are plotted when limits exist)</label>
+      <div class="chart-wrap"><canvas id="gradeChart" height="340"></canvas></div>
+    </div>
+
+    <div class="notice"><strong>Engineering note:</strong> This tool performs the arithmetic only. Pass or fail is judged on the cumulative % passing shown (2 decimals) against the limits entered above. Confirm the limits, the allowed mass loss, the sieve set, the washing and drying procedure, and the reporting requirements against the project specification and the applicable test standard. It does not replace engineering review.</div>
+  </section>
+</main>
+
+<footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
+
+<script src="../assets/shared.js"></script>
+<script>
+(function(){
+  /* ---------- configuration ---------- */
+  var RAIL={'75':[100,100],'13.2':[70,100],'2':[20,60],'0.425':[10,40],'0.075':[5,20]};
+  var FORMS={
+    B:{
+      coarse:[],
+      fine:[75,37.5,19,13.2,9.5,4.75,2,1.18,0.6,0.425,0.3,0.15,0.075],
+      defaults:RAIL,
+      hint:'The whole sample m1 is washed and dried to give m2, then sieved. Passing 0.075 mm = (m1 − m2) + Mf. No correction factor is used. Switching form clears the entered masses.'
+    },
+    A:{
+      coarse:[75,63,50,37.5,28,20],
+      fine:[14,10,6.3,5,3.35,2,1.18,0.6,0.425,0.3,0.212,0.15,0.075],
+      defaults:{},
+      hint:'m1 is sieved from 75 to 20 mm; m2 is the material passing 20 mm. m2 is riffled to give m3, which is washed and oven-dried to give m4, then sieved from 14 mm down. Masses on 14 mm and finer are multiplied by m2 ÷ m3. Switching form clears the entered masses.'
+    }
+  };
+
+  var form='B',rows=[],nc=0,limits={},last=null;
+
+  function el(id){return document.getElementById(id)}
+  function readNum(id){var e=el(id);if(!e)return NaN;var s=e.value.trim();return s===''?NaN:Number(s)}
+  function fmt(x,d){
+    if(typeof x!=='number'||!isFinite(x))return '—';
+    var s=x.toFixed(d);
+    if(/^-0(\.0*)?$/.test(s))s=s.slice(1);
+    return s;
+  }
+  function setMsg(t){el('message').textContent=t}
+
+  /* ---------- limits ---------- */
+  function loadLimits(){
+    var raw=null;
+    try{raw=localStorage.getItem('mbisecad-sieve-limits-'+form)}catch(e){}
+    if(raw){
+      try{var o=JSON.parse(raw);if(o&&typeof o==='object')return o}catch(e){}
+    }
+    return JSON.parse(JSON.stringify(FORMS[form].defaults));
+  }
+  function saveLimits(){
+    try{localStorage.setItem('mbisecad-sieve-limits-'+form,JSON.stringify(limits))}catch(e){}
+  }
+  function limOf(size){
+    var l=limits[String(size)];
+    var lo=(l&&l[0]!=null&&isFinite(l[0]))?Number(l[0]):null;
+    var hi=(l&&l[1]!=null&&isFinite(l[1]))?Number(l[1]):null;
+    return {lo:lo,hi:hi};
+  }
+  function limText(L){
+    if(L.lo===null&&L.hi===null)return '—';
+    if(L.lo!==null&&L.hi!==null)return L.lo===L.hi?String(L.lo):L.lo+' – '+L.hi;
+    return L.lo!==null?'≥ '+L.lo:'≤ '+L.hi;
+  }
+  function readLimitsFromDom(){
+    var o={};
+    rows.forEach(function(s,i){
+      var lo=el('lo_'+i).value.trim(),hi=el('hi_'+i).value.trim();
+      var a=lo===''?null:Number(lo),b=hi===''?null:Number(hi);
+      if(a!==null&&!isFinite(a))a=null;
+      if(b!==null&&!isFinite(b))b=null;
+      if(a!==null||b!==null)o[String(s)]=[a,b];
+    });
+    limits=o;
+  }
+
+  /* ---------- build the form ---------- */
+  function field(id,label,ph){
+    return '<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="number" min="0" step="any" inputmode="decimal" placeholder="'+ph+'"></div>';
+  }
+  function buildLimitRows(){
+    var h='';
+    rows.forEach(function(s,i){
+      var L=limOf(s);
+      h+='<tr><td class="lbl">'+s+' mm</td>'+
+        '<td><input id="lo_'+i+'" type="number" step="any" inputmode="decimal" value="'+(L.lo===null?'':L.lo)+'" aria-label="Lower limit '+s+' mm"></td>'+
+        '<td><input id="hi_'+i+'" type="number" step="any" inputmode="decimal" value="'+(L.hi===null?'':L.hi)+'" aria-label="Upper limit '+s+' mm"></td></tr>';
+    });
+    el('limitRows').innerHTML=h;
+  }
+  function buildAll(){
+    var cfg=FORMS[form],i;
+    rows=cfg.coarse.concat(cfg.fine);nc=cfg.coarse.length;
+    el('formHint').textContent=cfg.hint;
+    var showC=form==='A';
+
+    if(showC){
+      el('massFields').innerHTML=
+        field('m1','Initial dry mass, m1 (g)','e.g. 2569')+
+        field('m3','Riffled portion of m2, m3 (g)','e.g. 1272')+
+        field('m4','m3 after washing and oven drying, m4 (g)','e.g. 1037.4')+
+        field('mf','Fines in pan after washed sieving, Mf (g)','e.g. 0.6');
+    }else{
+      el('massFields').innerHTML=
+        field('m1','Initial dry mass, m1 (g)','e.g. 1885.5')+
+        field('m2','Mass after wash, m2 (g)','e.g. 1564.0')+
+        field('mf','Fines in pan after washed sieving, Mf (g)','e.g. 4.5');
+    }
+
+    buildLimitRows();
+
+    var nCols=showC?8:7;
+    el('sHead').innerHTML='<tr><th>Sieve</th><th class="num">Mass retained, actual (g)</th>'+
+      (showC?'<th class="num">Corrected mass (g)</th>':'')+
+      '<th class="num">% retained</th><th class="num">Cumulative % retained</th><th class="num">Cumulative % passing</th><th class="num">Limits (%)</th><th>Status</th></tr>';
+
+    var h='';
+    for(i=0;i<rows.length;i++){
+      if(showC&&i===nc){
+        h+='<tr class="sub"><td class="lbl">Passing '+rows[nc-1]+' mm (m2)</td><td class="num" id="m2cell">—</td><td colspan="'+(nCols-2)+'"></td></tr>';
+      }
+      h+='<tr><td class="lbl">'+rows[i]+' mm</td>'+
+        '<td><input id="m_'+i+'" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="Mass retained on '+rows[i]+' mm sieve (g)"></td>'+
+        (showC?'<td class="num" id="co_'+i+'">—</td>':'')+
+        '<td class="num" id="pr_'+i+'">—</td><td class="num" id="cr_'+i+'">—</td><td class="num" id="cp_'+i+'">—</td><td class="num" id="lm_'+i+'">—</td><td id="st_'+i+'">—</td></tr>';
+    }
+    h+='<tr class="sub"><td class="lbl">Passing 0.075 mm (pan)</td><td class="num" id="panA">—</td>'+
+      (showC?'<td class="num" id="panC">—</td>':'')+
+      '<td class="num" id="panP">—</td><td colspan="4"></td></tr>';
+    el('sBody').innerHTML=h;
+
+    el('sFoot').innerHTML='<tr class="sub"><td class="lbl">'+(showC?'Total (checked with m4)':'Total (checked with m1)')+'</td><td class="num" id="totA">—</td><td colspan="'+(nCols-2)+'" id="totNote">—</td></tr>';
+    last=null;
+  }
+
+  /* ---------- clear computed cells ---------- */
+  function clearResults(){
+    var i;
+    for(i=0;i<rows.length;i++){
+      ['co_','pr_','cr_','cp_','lm_','st_'].forEach(function(p){
+        var e=el(p+i);if(e){e.textContent='—';e.className=e.className.replace(/\b(ok|bad)\b/g,'').trim()}
+      });
+      var L=limOf(rows[i]);el('lm_'+i).textContent=limText(L);
+    }
+    ['panA','panC','panP','totA'].forEach(function(id){var e=el(id);if(e)e.textContent='—'});
+    el('totNote').textContent='—';
+    el('gmVal').textContent='—';el('gcVal').textContent='—';
+    el('limVal').textContent='—';el('limVal').className='value sm';
+    el('limNote').textContent=countLimited()?'Results appear after valid masses are entered.':'No limits set.';
+  }
+  function countLimited(){
+    var c=0;rows.forEach(function(s){var L=limOf(s);if(L.lo!==null||L.hi!==null)c++});
+    return c;
+  }
+
+  /* ---------- main calculation ---------- */
+  function calc(){
+    var i,n=rows.length,showA=form==='A';
+    var m1=readNum('m1'),mf=readNum('mf');
+    if(isNaN(mf))mf=0;
+    var masses=[],bad=false,entered=0;
+    for(i=0;i<n;i++){
+      var s=el('m_'+i).value.trim(),v=0;
+      if(s!==''){entered++;v=Number(s);if(!isFinite(v)||v<0){bad=true;v=0}}
+      masses.push(v);
+    }
+
+    var m2=NaN,m3=NaN,m4=NaN,pan=NaN,cf=1;
+    if(showA){
+      m3=readNum('m3');m4=readNum('m4');
+      var cs=0;for(i=0;i<nc;i++)cs+=masses[i];
+      if(m1>0)m2=m1-cs;
+      cf=(m2>0&&m3>0)?m2/m3:NaN;
+      if(m3>=0&&m4>=0)pan=(m3-m4)+mf;
+    }else{
+      m2=readNum('m2');
+      if(m1>=0&&m2>=0)pan=(m1-m2)+mf;
+    }
+
+    /* derived values panel */
+    if(showA){
+      var m2c=el('m2cell');if(m2c)m2c.textContent=m2>0?fmt(m2,2):'—';
+      el('derived').innerHTML='m2 (passing '+rows[nc-1]+' mm) = m1 − retained on '+rows[0]+' → '+rows[nc-1]+' mm = '+fmt(m2,2)+' g<br>'+
+        'Correction factor = m2 ÷ m3 = '+fmt(cf,4)+'<br>'+
+        'Passing 0.075 mm = (m3 − m4) + Mf = '+fmt(pan,2)+' g';
+    }else{
+      el('derived').innerHTML='Passing 0.075 mm = (m1 − m2) + Mf = '+fmt(pan,2)+' g';
+    }
+
+    /* validation */
+    var issue='';
+    if(bad)issue='Use zero or positive numbers for all masses.';
+    else if(!(m1>0))issue='Enter the initial dry mass m1 to begin.';
+    else if(mf<0)issue='Mf cannot be negative.';
+    else if(!showA){
+      if(!(m2>0))issue='Enter the mass after wash m2.';
+      else if(m2>m1)issue='m2 cannot be greater than m1.';
+    }else{
+      if(!(m2>0))issue='The masses retained on '+rows[0]+' → '+rows[nc-1]+' mm are not less than m1. Check the entries.';
+      else if(!(m3>0))issue='Enter the riffled mass m3.';
+      else if(m3>m2+1e-9)issue='m3 cannot be greater than m2 ('+fmt(m2,2)+' g).';
+      else if(!(m4>0))issue='Enter m4 (after washing and oven drying).';
+      else if(m4>m3+1e-9)issue='m4 cannot be greater than m3.';
+    }
+    if(!issue&&entered===0)issue='Enter the mass retained on each sieve (use 0 where nothing is retained).';
+    if(issue){clearResults();setMsg(issue);last=null;updateLimCount(null);draw();return}
+
+    /* percentages */
+    var cum=0,cpArr=[],failArr=[],limited=0,failed=[];
+    for(i=0;i<n;i++){
+      var c=(showA&&i>=nc)?masses[i]*cf:masses[i];
+      var p=c/m1*100;
+      cum+=p;
+      var cp=100-cum;
+      cpArr.push(cp);
+
+      var L=limOf(rows[i]),st='—',cls='',isFail=false;
+      if(L.lo!==null||L.hi!==null){
+        limited++;
+        var r2=Math.round(cp*100)/100;
+        if(L.lo!==null&&r2<L.lo){st='✗ Below limit';cls='bad';isFail=true}
+        else if(L.hi!==null&&r2>L.hi){st='✗ Above limit';cls='bad';isFail=true}
+        else{st='✓ Pass';cls='ok'}
+        if(isFail)failed.push(rows[i]+' mm');
+      }
+      failArr.push(isFail);
+
+      if(showA)el('co_'+i).textContent=fmt(c,2);
+      el('pr_'+i).textContent=fmt(p,2);
+      el('cr_'+i).textContent=fmt(cum,2);
+      el('cp_'+i).textContent=fmt(cp,2);
+      el('lm_'+i).textContent=limText(L);
+      var stc=el('st_'+i);stc.textContent=st;stc.className=cls;
+    }
+
+    var panC=pan*cf,panP=panC/m1*100;
+    el('panA').textContent=fmt(pan,2);
+    if(showA)el('panC').textContent=fmt(panC,2);
+    el('panP').textContent=fmt(panP,2);
+
+    /* totals and mass check */
+    var k,sumA=0,total,diff,pct;
+    if(showA){
+      for(k=nc;k<n;k++)sumA+=masses[k];
+      total=sumA+pan;
+      diff=m4-(sumA+mf);
+      pct=diff/m4*100;
+      el('totA').textContent=fmt(total,2);
+      el('totNote').textContent='Retained '+rows[nc]+' → '+rows[n-1]+' mm + passing 0.075 mm. Difference = m4 − (retained + Mf) = '+fmt(diff,2)+' g ('+fmt(pct,2)+' % of m4)';
+    }else{
+      for(k=0;k<n;k++)sumA+=masses[k];
+      total=sumA+pan;
+      diff=m1-total;
+      pct=diff/m1*100;
+      el('totA').textContent=fmt(total,2);
+      el('totNote').textContent='Difference = m1 − total = '+fmt(diff,2)+' g ('+fmt(pct,2)+' % of m1)';
+    }
+
+    /* GM and GC */
+    function cpAt(size){var j=rows.indexOf(size);return j<0?NaN:cpArr[j]}
+    var gm=(300-cpAt(2)-cpAt(0.425)-cpAt(0.075))/100;
+    el('gmVal').textContent=fmt(gm,2);
+    if(showA){
+      var gc=((cpAt(28)-cpAt(0.425))*cpAt(5))/100;
+      el('gcVal').textContent=fmt(gc,2);
+      el('gcNote').innerHTML='((%&lt;28 − %&lt;0.425) × %&lt;5) ÷ 100';
+    }else{
+      el('gcVal').textContent='—';
+      el('gcNote').textContent='Not used on this form.';
+    }
+
+    /* limits summary */
+    var lv=el('limVal');
+    if(!limited){
+      lv.textContent='None set';lv.className='value sm';
+      el('limNote').textContent='No limits set for this form.';
+    }else if(!failed.length){
+      lv.textContent='Within limits';lv.className='value sm';
+      el('limNote').textContent='All '+limited+' sieves with limits are within the limits.';
+    }else{
+      lv.textContent='Outside limits';lv.className='value sm bad';
+      el('limNote').textContent='Outside at: '+failed.join(', ')+'.';
+    }
+    updateLimCount(limited);
+
+    var warn=cpArr[n-1]<-0.005;
+    setMsg(warn?'Warning: the sieve masses add up to more than m1. Check the entries.':'Calculation updated.');
+
+    last={cp:cpArr,fail:failArr};
+    draw();
+  }
+
+  function updateLimCount(limited){
+    var c=limited===null?countLimited():limited;
+    el('limCount').textContent=c?'· '+c+' sieve'+(c>1?'s':'')+' with limits':'· none set';
+  }
+
+  /* ---------- grading curve ---------- */
+  function draw(){
+    var canvas=el('gradeChart');
+    if(!canvas)return;
+    var rect=canvas.getBoundingClientRect(),
+        W=Math.max(300,rect.width),H=340,dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.height=H+'px';
+    var ctx=canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+
+    var cs=getComputedStyle(document.documentElement);
+    function cv(name,d){return cs.getPropertyValue(name).trim()||d}
+    var muted=cv('--muted','#888'),grid=cv('--line-soft','#ccc'),axis=cv('--line','#999'),
+        green=cv('--green','#4a4'),orange=cv('--orange','#f70'),ink=cv('--text','#000'),
+        panel=cv('--panel','#fff'),limc=cv('--limit','#1f6fb2'),badc=cv('--bad','#c00');
+
+    var L=46,R=18,T=44,B=50,i,v,y,x;
+    var lx0=Math.log10(0.05),lx1=Math.log10(100);
+    function X(s){return L+(Math.log10(s)-lx0)/(lx1-lx0)*(W-L-R)}
+    function Y(p){return H-B-(p/100)*(H-T-B)}
+
+    ctx.font='11px IBM Plex Sans, sans-serif';ctx.textBaseline='alphabetic';
+
+    /* grid */
+    ctx.lineWidth=1;ctx.strokeStyle=grid;ctx.fillStyle=muted;ctx.textAlign='right';
+    for(v=0;v<=100;v+=10){
+      y=Y(v);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();
+      ctx.fillText(String(v),L-6,y+4);
+    }
+    var minors=[0.2,0.5,2,5,20,50],majors=[0.1,1,10,100],wide=W>=520;
+    ctx.textAlign='center';
+    ctx.globalAlpha=.5;
+    minors.forEach(function(s){
+      x=X(s);ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-B);ctx.stroke();
+    });
+    ctx.globalAlpha=1;
+    if(wide)minors.forEach(function(s){ctx.fillText(String(s),X(s),H-B+16)});
+    majors.forEach(function(s){
+      x=X(s);ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-B);ctx.stroke();
+      ctx.fillText(String(s),x,H-B+16);
+    });
+    ctx.strokeStyle=axis;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,H-B);ctx.lineTo(W-R,H-B);ctx.stroke();
+    ctx.fillStyle=muted;ctx.textAlign='center';ctx.fillText('Sieve size (mm, log scale)',(L+W-R)/2,H-8);
+    ctx.save();ctx.translate(13,(T+H-B)/2);ctx.rotate(-Math.PI/2);ctx.fillText('Cumulative % passing',0,0);ctx.restore();
+
+    /* specification limits */
+    var asc=rows.slice().reverse();
+    var hasLim=false,lowP=[],upP=[];
+    asc.forEach(function(s){
+      var l=limOf(s);
+      if(l.lo!==null||l.hi!==null)hasLim=true;
+      if(l.lo!==null)lowP.push({x:s,y:l.lo});
+      if(l.hi!==null)upP.push({x:s,y:l.hi});
+    });
+    if(hasLim){
+      var same=lowP.length>1&&lowP.length===upP.length&&lowP.every(function(p,k){return p.x===upP[k].x});
+      if(same){
+        ctx.beginPath();
+        upP.forEach(function(p,k){if(k)ctx.lineTo(X(p.x),Y(p.y));else ctx.moveTo(X(p.x),Y(p.y))});
+        for(i=lowP.length-1;i>=0;i--)ctx.lineTo(X(lowP[i].x),Y(lowP[i].y));
+        ctx.closePath();ctx.globalAlpha=.12;ctx.fillStyle=limc;ctx.fill();ctx.globalAlpha=1;
+      }
+      [lowP,upP].forEach(function(a){
+        if(!a.length)return;
+        ctx.strokeStyle=limc;ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.lineJoin='round';
+        ctx.beginPath();
+        a.forEach(function(p,k){if(k)ctx.lineTo(X(p.x),Y(p.y));else ctx.moveTo(X(p.x),Y(p.y))});
+        ctx.stroke();ctx.setLineDash([]);
+        a.forEach(function(p){
+          ctx.beginPath();ctx.arc(X(p.x),Y(p.y),3.2,0,Math.PI*2);ctx.fillStyle=panel;ctx.fill();
+          ctx.lineWidth=1.6;ctx.strokeStyle=limc;ctx.stroke();
+        });
+      });
+    }
+
+    /* sample curve */
+    if(last){
+      var plotAll=el('plotAll').checked,pts=[];
+      for(i=rows.length-1;i>=0;i--){
+        var l=limOf(rows[i]);
+        if(plotAll||!hasLim||l.lo!==null||l.hi!==null){
+          pts.push({x:rows[i],y:Math.max(0,Math.min(100,last.cp[i])),bad:last.fail[i]});
+        }
+      }
+      ctx.strokeStyle=green;ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();
+      pts.forEach(function(p,k){if(k)ctx.lineTo(X(p.x),Y(p.y));else ctx.moveTo(X(p.x),Y(p.y))});
+      ctx.stroke();
+      pts.forEach(function(p){
+        ctx.beginPath();ctx.arc(X(p.x),Y(p.y),5.5,0,Math.PI*2);
+        ctx.fillStyle=p.bad?badc:orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=panel;ctx.stroke();
+      });
+    }else{
+      ctx.fillStyle=muted;ctx.textAlign='left';
+      ctx.fillText('Enter valid masses to display the sample curve.',L+12,T+22);
+    }
+
+    /* legend and sample label */
+    ctx.lineWidth=3;ctx.strokeStyle=green;ctx.beginPath();ctx.moveTo(L,20);ctx.lineTo(L+22,20);ctx.stroke();
+    ctx.fillStyle=ink;ctx.textAlign='left';ctx.fillText('Sample',L+28,24);
+    var lgx=L+84;
+    if(hasLim){
+      ctx.lineWidth=2;ctx.strokeStyle=limc;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(lgx,20);ctx.lineTo(lgx+22,20);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=ink;ctx.fillText('Limits',lgx+28,24);
+    }
+    var tag=el('sampleNo').value.trim();
+    var mat=el('material').value.trim();
+    var label=tag&&mat?tag+' · '+mat:(tag||mat);
+    if(label){
+      ctx.fillStyle=muted;ctx.textAlign='right';
+      var maxw=W-R-(lgx+90);
+      var t=label;
+      while(t.length>4&&ctx.measureText(t).width>maxw)t=t.slice(0,-2);
+      if(t!==label)t+='…';
+      ctx.fillText(t,W-R,24);
+    }
+    ctx.textAlign='left';
+  }
+
+  /* ---------- events ---------- */
+  el('formSel').addEventListener('change',function(){
+    form=el('formSel').value;
+    try{localStorage.setItem('mbisecad-sieve-form',form)}catch(e){}
+    limits=loadLimits();
+    buildAll();
+    calc();
+  });
+  el('massFields').addEventListener('input',calc);
+  el('sBody').addEventListener('input',calc);
+  el('limitRows').addEventListener('input',function(){readLimitsFromDom();saveLimits();calc()});
+  el('limitDefault').addEventListener('click',function(){
+    limits=JSON.parse(JSON.stringify(FORMS[form].defaults));
+    saveLimits();buildLimitRows();calc();
+  });
+  el('limitClear').addEventListener('click',function(){
+    limits={};saveLimits();buildLimitRows();calc();
+  });
+  el('resetAll').addEventListener('click',function(){
+    var inputs=document.querySelectorAll('#massFields input,#sBody input');
+    for(var i=0;i<inputs.length;i++)inputs[i].value='';
+    calc();
+    setMsg('All entries cleared. Enter the initial dry mass m1 to begin.');
+  });
+  el('sampleNo').addEventListener('input',draw);
+  el('material').addEventListener('input',draw);
+  el('plotAll').addEventListener('change',draw);
+  document.addEventListener('themechange',draw);
+  window.addEventListener('resize',draw);
+
+  /* ---------- start ---------- */
+  var savedForm=null;
+  try{savedForm=localStorage.getItem('mbisecad-sieve-form')}catch(e){}
+  if(savedForm==='A'||savedForm==='B')form=savedForm;
+  el('formSel').value=form;
+  limits=loadLimits();
+  buildAll();
+  calc();
+})();
+</script>
+</body>
+</html>
