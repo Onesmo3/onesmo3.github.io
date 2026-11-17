@@ -4,13 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#071a2f">
-<meta name="description" content="MDD and OMC compaction calculator by MbiseCAD — compaction curve with maximum dry density and optimum moisture content.">
+<meta name="description" content="Proctor compaction test calculator by MbiseCAD — MDD, OMC, moisture content and compaction curve with print report.">
 <title>MDD &amp; OMC Calculator — MbiseCAD</title>
 <link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<style>
+  :root{--bad:#ff6b6b}
+  [data-theme="light"]{--bad:#c62828}
+  .field.full{grid-column:1 / -1}
+  .bad-text{color:var(--bad);font-weight:700}
+  #pointTable{min-width:820px}
+  #pointTable td.lbl,#pointTable th{white-space:nowrap}
+  #pointTable .num{font-variant-numeric:tabular-nums}
+  #pointTable .row-actions{display:flex;gap:6px;flex-wrap:nowrap}
+  .result .value .unit{font:600 .95rem/1 var(--body);color:var(--muted);margin-left:6px}
+  .signatures{display:none}
+  @media print{
+    #infoCard,#mouldCard,#formCard{display:none!important}
+    #pointTable{min-width:0}
+    #pointTable th,#pointTable td{padding:5px 7px}
+    #peakNote{display:block!important}
+    .chart-wrap canvas{height:250px!important}
+    .signatures{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;border-top:1px solid #000;padding-top:10px;font-size:9.5pt}
+    .signatures h4{margin:0 0 8px;font-size:10pt}
+    .signatures p{margin:0 0 14px}
+  }
+</style>
 <script>
   /* Weka theme mapema ili kuepuka flash ya rangi */
   try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
@@ -30,34 +52,59 @@
   <section class="hero">
     <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / MDD &amp; OMC</p>
     <div class="eyebrow">Soil Testing</div>
-    <h1>MDD &amp; OMC Compaction Calculator</h1>
-    <p class="lead">Enter mould details once, then add the raw measurements for each compaction point.</p>
+    <h1>Proctor Compaction — MDD &amp; OMC</h1>
+    <p class="lead">Enter the test information and mould details once, then add each compaction point. Results are read at the top of a smooth curve through all measured points.</p>
   </section>
 
   <section id="mdd-omc">
 
-    <div class="tool">
-      <h3>1. Mould information</h3>
+    <div class="tool" id="infoCard">
+      <h3>1. Test information</h3>
       <div class="fields mt">
-        <div class="field"><label for="mouldId">Mould ID</label><input id="mouldId" type="text" placeholder="e.g. Mould 01"></div>
-        <div class="field"><label for="mouldMass">Empty mould mass (g)</label><input id="mouldMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 4250"></div>
-        <div class="field"><label for="mouldVolume">Mould volume (cm³)</label><input id="mouldVolume" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 1000"></div>
+        <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
+        <div class="field"><label for="i-contractor">Contractor</label><input id="i-contractor" type="text" data-info="contractor" placeholder="e.g. Contractor name"></div>
+        <div class="field"><label for="i-consultant">Consultant</label><input id="i-consultant" type="text" data-info="consultant" placeholder="e.g. Consultant name"></div>
+        <div class="field"><label for="i-source">Source of material</label><input id="i-source" type="text" data-info="source" placeholder="e.g. Nyambula borrow pit"></div>
+        <div class="field"><label for="i-sampleNo">Sample number</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/002"></div>
+        <div class="field"><label for="i-sampledFrom">Sampled from</label><input id="i-sampledFrom" type="text" data-info="sampledFrom" placeholder="e.g. Km 0+075, LHS"></div>
+        <div class="field"><label for="i-testedBy">Tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
+        <div class="field full"><label for="i-description">Sample description</label><input id="i-description" type="text" data-info="description" placeholder="e.g. Natural gravel, brown"></div>
+        <div class="field"><label for="i-purpose">Purpose / objective</label><input id="i-purpose" type="text" data-info="purpose" placeholder="e.g. C1 trial"></div>
+        <div class="field"><label for="i-checkedBy">Checked / verified by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-dateSampled">Date of sampling</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
+        <div class="field"><label for="i-dateTested">Date of testing</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
+        <div class="field"><label for="i-nmc">Natural moisture content, NMC (%)</label><input id="i-nmc" type="number" min="0" step="any" inputmode="decimal" data-info="nmc" placeholder="Optional"></div>
+        <div class="field"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-meta="testMethod" placeholder="e.g. CML 1.9"></div>
+        <div class="field full"><label for="i-compaction">Compaction method</label><input id="i-compaction" type="text" data-meta="compaction" placeholder="e.g. BS Heavy — CBR mould, 5 layers, 62 blows"></div>
+      </div>
+    </div>
+
+    <div class="tool stack" id="mouldCard">
+      <h3>2. Mould information</h3>
+      <div class="fields mt">
+        <div class="field"><label for="mouldId">Mould ID</label><input id="mouldId" type="text" data-mould="id" placeholder="e.g. Mould 01"></div>
+        <div class="field"><label for="mouldMass">Empty mould mass (g)</label><input id="mouldMass" type="number" min="0" step="any" inputmode="decimal" data-mould="mass" placeholder="e.g. 4250"></div>
+        <div class="field"><label for="mouldVolume">Mould volume (cm³)</label><input id="mouldVolume" type="number" min="0" step="any" inputmode="decimal" data-mould="volume" placeholder="e.g. 1000"></div>
       </div>
       <div class="formula">Wet soil mass = (Mould + compacted wet soil) − Empty mould mass<br>Wet density = Wet soil mass ÷ Mould volume<br>Dry density = Wet density ÷ (1 + moisture content ÷ 100)</div>
     </div>
 
-    <div class="tool stack">
-      <h3>2. Compaction test points</h3>
-      <p class="hint">Use grams for all mass readings and cm³ for mould volume. Each row represents one moisture-content sample associated with one compacted mould specimen.</p>
+    <div class="tool stack" id="formCard">
+      <h3>3. Compaction test points</h3>
+      <p class="hint">Use grams for all masses and cm³ for mould volume. Each point needs one compacted mould specimen and one moisture sample from it.</p>
       <div class="fields mt">
-        <div class="field"><label for="pointLabel">Point label (optional)</label><input id="pointLabel" type="text" placeholder="e.g. Point 1"></div>
+        <div class="field"><label for="pointLabel">Test no. / label (optional)</label><input id="pointLabel" type="text" placeholder="e.g. 1"></div>
+        <div class="field"><label for="originalSample">Weight of original sample (g, optional)</label><input id="originalSample" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 6000"></div>
+        <div class="field"><label for="waterAdded">Water added (%, optional)</label><input id="waterAdded" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 3.0"></div>
         <div class="field"><label for="mouldWet">Mould + compacted wet soil (g)</label><input id="mouldWet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 5850"></div>
-        <div class="field"><label for="containerMass">Empty moisture container (g)</label><input id="containerMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
+        <div class="field"><label for="containerId">Container ID</label><input id="containerId" type="text" placeholder="e.g. C-12"></div>
+        <div class="field"><label for="containerMass">Weight of container (g)</label><input id="containerMass" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
         <div class="field"><label for="containerWet">Container + wet soil (g)</label><input id="containerWet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
         <div class="field"><label for="containerDry">Container + dry soil (g)</label><input id="containerDry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div>
       </div>
       <div class="actions">
         <button class="btn primary" id="addPoint" type="button">Add test point</button>
+        <button class="btn secondary" id="cancelEdit" type="button" hidden>Cancel edit</button>
         <button class="btn secondary" id="clearPointForm" type="button">Clear fields</button>
       </div>
       <p class="hint" id="mddMessage" role="status" aria-live="polite">Enter mould details and a test point to begin.</p>
@@ -65,36 +112,54 @@
 
     <div class="tool stack">
       <div class="head-row">
-        <h3>3. Test results</h3>
+        <h3>4. Test results</h3>
         <div class="actions">
-          <button class="btn secondary" id="calculateMdd" type="button">Calculate MDD &amp; OMC</button>
-          <button class="btn secondary" id="resetMdd" type="button">Reset test</button>
+          <button class="btn primary" id="calculateMdd" type="button">Calculate MDD &amp; OMC</button>
+          <button class="btn secondary" id="btnPrint" type="button">Print report</button>
+          <button class="btn secondary" id="btnCsv" type="button">Export CSV</button>
+          <button class="btn secondary" id="btnReset" type="button">Reset test</button>
         </div>
       </div>
       <div class="table-scroll">
-        <table class="data-table" id="mddTable">
+        <table class="data-table" id="pointTable">
           <thead><tr>
-            <th>Point</th>
-            <th class="num">Water content (%)</th>
+            <th>Test</th>
+            <th class="num">Water added (%)</th>
             <th class="num">Wet density (g/cm³)</th>
+            <th class="num">Moisture content (%)</th>
             <th class="num">Dry density (g/cm³)</th>
             <th>Action</th>
           </tr></thead>
-          <tbody id="mddRows"><tr><td colspan="5" class="empty">No test points added yet.</td></tr></tbody>
+          <tbody id="mddRows"><tr><td colspan="6" class="empty">No test points added yet.</td></tr></tbody>
         </table>
       </div>
-      <div class="grid-2 stack">
-        <div class="tool result"><small>Maximum Dry Density (MDD)</small><div class="value" id="mddValue">—</div><small>g/cm³</small></div>
+      <div class="grid stack">
+        <div class="tool result"><small>Maximum Dry Density (MDD)</small><div class="value" id="mddValue">—</div><small id="mddKg">g/cm³</small></div>
         <div class="tool result"><small>Optimum Moisture Content (OMC)</small><div class="value" id="omcValue">—</div><small>%</small></div>
+        <div class="tool result"><small>Natural Moisture Content (NMC)</small><div class="value" id="nmcValue">—</div><small>%</small></div>
       </div>
       <p class="hint" id="peakNote">Results will appear after calculating five valid test points.</p>
+      <p class="hint" id="saveState"></p>
     </div>
 
     <div class="tool stack">
-      <h3>4. Compaction curve</h3>
+      <h3>5. Compaction curve</h3>
       <p class="hint">Dry density is plotted against moisture content. A smooth curve passes through every measured point (orange dots). MDD and OMC are read at the top of this curve (red dot), which can lie between points, and not simply at the highest measured dry density.</p>
-      <div class="chart-wrap">
-        <canvas id="compactionChart" height="320"></canvas>
+      <div class="chart-wrap"><canvas id="compactionChart" height="320"></canvas></div>
+    </div>
+
+    <div class="signatures">
+      <div>
+        <h4>FOR CONTRACTOR</h4>
+        <p>Checked by (MT): <span data-sign="testedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="dateTested"></span></p>
+      </div>
+      <div>
+        <h4>FOR ENGINEER</h4>
+        <p>Verified by (ME): <span data-sign="checkedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="dateTested"></span></p>
       </div>
     </div>
 
@@ -109,33 +174,135 @@
 <script src="../assets/tool-kit.js"></script>
 <script>
 (function(){
-  var compactionPoints=[];
-  var lastResult=null; /* {peak, spline} — inatumika kuchora alama ya MDD/OMC baada ya Calculate */
+  'use strict';
 
-  function el(id){return document.getElementById(id)}
-  function numberFrom(id){return Number(el(id).value)}
-  function fmt(n,d){return Number(n).toFixed(d===undefined?3:d)}
-  function escapeHtml(value){
-    return String(value).replace(/[&<>"']/g,function(ch){
+  var TK=window.MbiseTool||null;
+  var el=function(id){return document.getElementById(id)};
+
+  function escapeHTML(value){
+    return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function fmt(n,d){
+    d=d===undefined?3:d;
+    if(typeof n!=='number'||!isFinite(n))return '—';
+    var s=n.toFixed(d);
+    if(/^-0(\.0*)?$/.test(s))s=s.slice(1);
+    return s;
+  }
+  function num(value){
+    var s=String(value==null?'':value).trim();
+    return s===''?NaN:Number(s);
+  }
+  function todayISO(){
+    var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+
+  /* ---------- state ---------- */
+  function defaultState(){
+    return {
+      info:{project:'',contractor:'',consultant:'',source:'',sampleNo:'',sampledFrom:'',testedBy:'',checkedBy:'',description:'',purpose:'',dateSampled:'',dateTested:todayISO(),nmc:''},
+      meta:{testMethod:'CML 1.9, Ref. BS 1377: Part 4: 1990',compaction:'BS Heavy — CBR mould, 5 layers, 62 blows, 4.5 kg rammer'},
+      mould:{id:'',mass:'',volume:''},
+      points:[]
+    };
+  }
+
+  var state=defaultState(),editingIndex=null,lastResult=null,restored=false;
+
+  var POINT_FIELDS=['label','originalSample','waterAdded','mouldWet','containerId','containerMass','containerWet','containerDry'];
+  var FORM_IDS={label:'pointLabel',originalSample:'originalSample',waterAdded:'waterAdded',mouldWet:'mouldWet',containerId:'containerId',containerMass:'containerMass',containerWet:'containerWet',containerDry:'containerDry'};
+
+  function restore(){
+    if(!TK)return;
+    var saved=TK.store('mdd-omc').load(null);
+    if(!saved||typeof saved!=='object')return;
+    restored=true;
+    var base=defaultState();
+    ['info','meta','mould'].forEach(function(group){
+      if(saved[group]&&typeof saved[group]==='object'){
+        Object.keys(base[group]).forEach(function(k){
+          if(typeof saved[group][k]==='string')base[group][k]=saved[group][k];
+        });
+      }
+    });
+    if(Object.prototype.toString.call(saved.points)==='[object Array]'){
+      saved.points.forEach(function(p){
+        if(!p||typeof p!=='object')return;
+        var point={};
+        POINT_FIELDS.forEach(function(f){point[f]=String(p[f]==null?'':p[f])});
+        base.points.push(point);
+      });
+    }
+    state=base;
+  }
+
+  var saveSoon=TK?TK.debounce(saveNow,500):function(){};
+  function saveNow(){
+    if(!TK)return;
+    var ok=TK.store('mdd-omc').save(state);
+    var status=el('saveState');
+    if(status){
+      var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
+      status.textContent=ok?('Saved in this browser at '+p(d.getHours())+':'+p(d.getMinutes())+'.'):'Could not save in this browser.';
+      status.className=ok?'hint':'hint bad-text';
+    }
+  }
+
+  /* ---------- calculations ---------- */
+  function calcPoint(raw){
+    var mould=state.mould;
+    var mouldMass=num(mould.mass),volume=num(mould.volume);
+    var wetMass=num(raw.mouldWet),tare=num(raw.containerMass),
+        containerWet=num(raw.containerWet),containerDry=num(raw.containerDry);
+    if([mouldMass,volume,wetMass,tare,containerWet,containerDry].some(function(v){return isNaN(v)})){
+      return {state:'blank'};
+    }
+    if(![mouldMass,volume,wetMass,tare,containerWet,containerDry].every(isFinite))return {state:'error'};
+    var wetSoil=wetMass-mouldMass,wetSample=containerWet-tare,
+        drySample=containerDry-tare,water=containerWet-containerDry;
+    if(mouldMass<0||volume<=0||wetSoil<=0||wetSample<=0||drySample<=0||water<0)return {state:'error'};
+    var w=water/drySample*100,wetDensity=wetSoil/volume,dryDensity=wetDensity/(1+w/100);
+    if(!isFinite(w)||!isFinite(dryDensity)||dryDensity<=0)return {state:'error'};
+    return {state:'ok',w:w,wetDensity:wetDensity,dryDensity:dryDensity,wetSoil:wetSoil,water:water,drySample:drySample};
+  }
+
+  function pointData(){
+    return state.points.map(function(raw,i){
+      var c=calcPoint(raw);
+      return {
+        index:i,
+        label:raw.label.trim()||('Test '+(i+1)),
+        waterAdded:num(raw.waterAdded),
+        wetDensity:c.wetDensity,
+        dryDensity:c.dryDensity,
+        w:c.w,
+        state:c.state
+      };
     });
   }
 
   /* ---------- table ---------- */
-  function renderMddRows(){
-    var body=el('mddRows');
-    if(!compactionPoints.length){
-      body.innerHTML='<tr><td colspan="5" class="empty">No test points added yet.</td></tr>';
+  function renderRows(){
+    var body=el('mddRows'),data=pointData();
+    if(!data.length){
+      body.innerHTML='<tr><td colspan="6" class="empty">No test points added yet.</td></tr>';
       return;
     }
-    body.innerHTML=compactionPoints.map(function(p,i){
-      return '<tr>'+
-        '<td>'+escapeHtml(p.label)+'</td>'+
-        '<td class="num">'+fmt(p.w,2)+'</td>'+
-        '<td class="num">'+fmt(p.wetDensity,3)+'</td>'+
-        '<td class="num">'+fmt(p.dryDensity,3)+'</td>'+
-        '<td><button class="btn secondary small" type="button" data-remove-point="'+i+'">Remove</button></td>'+
-      '</tr>';
+    body.innerHTML=data.map(function(p){
+      var bad=p.state==='error';
+      return '<tr'+(bad?' class="bad-text"':'')+'>'+
+        '<td class="lbl">'+escapeHTML(p.label)+'</td>'+
+        '<td class="num">'+(isNaN(p.waterAdded)?'—':fmt(p.waterAdded,2))+'</td>'+
+        '<td class="num">'+(bad?'check':fmt(p.wetDensity,3))+'</td>'+
+        '<td class="num">'+(bad?'check':fmt(p.w,2))+'</td>'+
+        '<td class="num">'+(bad?'check':fmt(p.dryDensity,3))+'</td>'+
+        '<td><div class="row-actions">'+
+          '<button class="btn secondary small" type="button" data-edit="'+p.index+'">Edit</button>'+
+          '<button class="btn secondary small" type="button" data-remove-point="'+p.index+'">Remove</button>'+
+        '</div></td></tr>';
     }).join('');
   }
 
@@ -148,15 +315,13 @@
         b=Array(n-1).fill(0),c=Array(n).fill(0),d=Array(n-1).fill(0);
     for(var i=0;i<n-1;i++){
       h[i]=p[i+1].w-p[i].w;
-      if(!(h[i]>0)) throw new Error('Moisture content values must be unique.');
+      if(!(h[i]>0))throw new Error('Moisture content values must be unique.');
     }
-    for(i=1;i<n-1;i++){
-      alpha[i]=3/h[i]*(a[i+1]-a[i])-3/h[i-1]*(a[i]-a[i-1]);
-    }
+    for(i=1;i<n-1;i++)alpha[i]=3/h[i]*(a[i+1]-a[i])-3/h[i-1]*(a[i]-a[i-1]);
     l[0]=1;
     for(i=1;i<n-1;i++){
       l[i]=2*(p[i+1].w-p[i-1].w)-h[i-1]*mu[i-1];
-      if(Math.abs(l[i])<1e-12) throw new Error('Unable to build spline from these points.');
+      if(Math.abs(l[i])<1e-12)throw new Error('Unable to build spline from these points.');
       mu[i]=h[i]/l[i];
       z[i]=(alpha[i]-h[i-1]*z[i-1])/l[i];
     }
@@ -176,9 +341,8 @@
     var candidates=[];
     for(var i=0;i<s.h.length;i++){
       var A=3*s.d[i],B=2*s.c[i],C=s.b[i],roots=[];
-      if(Math.abs(A)<1e-12){
-        if(Math.abs(B)>1e-12) roots.push(-C/B);
-      }else{
+      if(Math.abs(A)<1e-12){if(Math.abs(B)>1e-12)roots.push(-C/B)}
+      else{
         var disc=B*B-4*A*C;
         if(disc>=0){
           var q=Math.sqrt(disc);
@@ -201,7 +365,9 @@
 
   /* ---------- chart ---------- */
   function chartPoints(){
-    return compactionPoints.map(function(p){return {w:p.w,d:p.dryDensity}}).sort(function(a,b){return a.w-b.w});
+    return pointData().filter(function(p){return p.state==='ok'})
+      .map(function(p){return {w:p.w,d:p.dryDensity}})
+      .sort(function(a,b){return a.w-b.w});
   }
   function curveSamples(s){
     var out=[];
@@ -214,22 +380,24 @@
     }
     return out;
   }
-  function drawCompactionChart(){
+  function drawCompactionChart(printMode){
     var canvas=el('compactionChart');
-    if(!canvas) return;
+    if(!canvas)return;
     var rect=canvas.getBoundingClientRect(),
-        W=Math.max(300,rect.width),H=320,dpr=window.devicePixelRatio||1;
-    canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.height=H+'px';
+        W=Math.max(300,rect.width||600),H=320,dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.height=H+'px';
     var ctx=canvas.getContext('2d');
+    if(!ctx)return;
     ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
-    var cs=getComputedStyle(document.documentElement),
-        muted=cs.getPropertyValue('--muted').trim(),
-        grid=cs.getPropertyValue('--line-soft').trim(),
-        axis=cs.getPropertyValue('--line').trim(),
-        green=cs.getPropertyValue('--green').trim(),
-        orange=cs.getPropertyValue('--orange').trim(),
-        ink=cs.getPropertyValue('--text').trim(),
-        panel=cs.getPropertyValue('--panel').trim()||'#fff';
+    var cs=getComputedStyle(document.documentElement);
+    function cv(name,d){return cs.getPropertyValue(name).trim()||d}
+    var muted=printMode?'#333':cv('--muted','#888'),
+        grid=printMode?'#d9d9d9':cv('--line-soft','#ccc'),
+        axis=printMode?'#666':cv('--line','#999'),
+        green=printMode?'#2e7d32':cv('--green','#4a4'),
+        orange=printMode?'#ef6c00':cv('--orange','#f70'),
+        ink=printMode?'#000':cv('--text','#000'),
+        panel=printMode?'#fff':cv('--panel','#fff');
     var pts=chartPoints();
     ctx.font='12px IBM Plex Sans, sans-serif';ctx.fillStyle=muted;ctx.textBaseline='alphabetic';
     if(pts.length<2){
@@ -252,7 +420,6 @@
     function X(v){return L+(v-x0)/(x1-x0)*(W-L-R)}
     function Y(v){return H-B-(v-y0)/(y1-y0)*(H-T-B)}
 
-    /* grid + tick labels */
     ctx.lineWidth=1;ctx.strokeStyle=grid;
     for(var i=0;i<=4;i++){
       var yv=y0+(y1-y0)*i/4,y=Y(yv);
@@ -268,12 +435,10 @@
     ctx.fillStyle=muted;ctx.textAlign='center';ctx.fillText('Moisture content (%)',(L+W-R)/2,H-6);
     ctx.save();ctx.translate(14,(T+H-B)/2);ctx.rotate(-Math.PI/2);ctx.fillText('Dry density (g/cm³)',0,0);ctx.restore();
 
-    /* smooth curve through every point */
     ctx.strokeStyle=green;ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();
     samples.forEach(function(v,i){if(i===0)ctx.moveTo(X(v.x),Y(v.y));else ctx.lineTo(X(v.x),Y(v.y));});
     ctx.stroke();
 
-    /* peak guides (MDD / OMC) */
     if(peak){
       ctx.setLineDash([5,4]);ctx.lineWidth=1.2;ctx.strokeStyle=ink;
       ctx.beginPath();
@@ -282,7 +447,6 @@
       ctx.stroke();ctx.setLineDash([]);
     }
 
-    /* measured points */
     pts.forEach(function(p){
       ctx.beginPath();ctx.arc(X(p.w),Y(p.d),5.5,0,Math.PI*2);
       ctx.fillStyle=orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=panel;ctx.stroke();
@@ -303,66 +467,105 @@
   function clearResults(note){
     lastResult=null;
     el('mddValue').textContent='—';
+    el('mddKg').textContent='g/cm³';
     el('omcValue').textContent='—';
     el('peakNote').textContent=note;
+    el('peakNote').className='hint';
   }
 
-  /* ---------- add point ---------- */
-  el('addPoint').addEventListener('click',function(){
+  function updateNmc(){
+    var v=num(state.info.nmc);
+    el('nmcValue').textContent=isFinite(v)?fmt(v,2):'—';
+  }
+
+  /* ---------- form ---------- */
+  function setFormValues(point){
+    POINT_FIELDS.forEach(function(f){
+      el(FORM_IDS[f]).value=point?point[f]:'';
+    });
+  }
+  function clearPointForm(){setFormValues(null)}
+
+  function startEdit(i){
+    var p=state.points[i];
+    if(!p)return;
+    editingIndex=i;
+    setFormValues(p);
+    el('addPoint').textContent='Update point';
+    el('cancelEdit').hidden=false;
+    el('formCard').scrollIntoView({behavior:'smooth',block:'start'});
+    el('pointLabel').focus();
+    el('mddMessage').textContent='Editing test point '+(i+1)+'. Change the readings and press Update point.';
+  }
+  function cancelEditMode(){
+    editingIndex=null;
+    clearPointForm();
+    el('addPoint').textContent='Add test point';
+    el('cancelEdit').hidden=true;
+    el('mddMessage').textContent='Edit cancelled.';
+  }
+
+  function submitPoint(){
     var msg=el('mddMessage');
-    var mass=numberFrom('mouldMass'),volume=numberFrom('mouldVolume'),mouldWet=numberFrom('mouldWet'),
-        tare=numberFrom('containerMass'),containerWet=numberFrom('containerWet'),containerDry=numberFrom('containerDry');
-    var required=['mouldMass','mouldVolume','mouldWet','containerMass','containerWet','containerDry'];
-    if(required.some(function(id){return el(id).value.trim()===''})||!required.every(function(id){return Number.isFinite(numberFrom(id))})){
-      msg.textContent='Enter all required measurements using numbers.';return;
+    var mouldMass=num(state.mould.mass),volume=num(state.mould.volume);
+    if(!(mouldMass>=0)||!(volume>0)){
+      msg.textContent='Enter the empty mould mass and a mould volume greater than zero first.';
+      return;
     }
-    var wetSoil=mouldWet-mass,wetSample=containerWet-tare,drySample=containerDry-tare,water=containerWet-containerDry;
-    if(mass<0||volume<=0||wetSoil<=0||wetSample<=0||drySample<=0||water<0){
-      msg.textContent='Check the readings: mould volume and soil masses must be positive, and wet sample mass cannot be less than dry sample mass.';return;
+    var required=['mouldWet','containerMass','containerWet','containerDry'];
+    if(required.some(function(id){return el(id).value.trim()===''})){
+      msg.textContent='Enter the mould + wet soil, container, container + wet soil and container + dry soil masses.';
+      return;
     }
-    var w=water/drySample*100,wetDensity=wetSoil/volume,dryDensity=wetDensity/(1+w/100);
-    if(![w,wetDensity,dryDensity].every(Number.isFinite)||dryDensity<=0){
-      msg.textContent='These measurements do not produce a valid result. Please check the values and units.';return;
-    }
-    var label=el('pointLabel').value.trim()||('Point '+(compactionPoints.length+1));
-    compactionPoints.push({label:label,w:w,wetDensity:wetDensity,dryDensity:dryDensity});
-    renderMddRows();
-    clearResults('Recalculate after adding or removing test points.');
-    drawCompactionChart();
-    msg.textContent=label+' added. Add the next compaction point.';
-    ['pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(function(id){el(id).value=''});
-  });
+    var point={};
+    point.label=el('pointLabel').value.trim();
+    point.originalSample=el('originalSample').value.trim();
+    point.waterAdded=el('waterAdded').value.trim();
+    point.mouldWet=el('mouldWet').value.trim();
+    point.containerId=el('containerId').value.trim();
+    point.containerMass=el('containerMass').value.trim();
+    point.containerWet=el('containerWet').value.trim();
+    point.containerDry=el('containerDry').value.trim();
 
-  el('clearPointForm').addEventListener('click',function(){
-    ['pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(function(id){el(id).value=''});
-  });
-
-  /* ---------- remove point ---------- */
-  el('mddRows').addEventListener('click',function(e){
-    var btn=e.target.closest('[data-remove-point]');
-    if(!btn) return;
-    compactionPoints.splice(Number(btn.dataset.removePoint),1);
-    renderMddRows();
-    clearResults('Recalculate after changing test points.');
+    var check=calcPoint(point);
+    if(check.state!=='ok'){
+      msg.textContent='Check the readings: mould volume and soil masses must be positive, and wet sample mass cannot be less than dry sample mass.';
+      return;
+    }
+    var label=point.label||('Test '+(state.points.length+1));
+    if(editingIndex!==null){
+      state.points[editingIndex]=point;
+      msg.textContent='Test point '+label+' updated. Recalculate MDD and OMC.';
+    }else{
+      state.points.push(point);
+      msg.textContent=label+' added. Add the next compaction point.';
+    }
+    editingIndex=null;
+    el('addPoint').textContent='Add test point';
+    el('cancelEdit').hidden=true;
+    clearPointForm();
+    renderRows();
+    clearResults('Recalculate after adding, editing or removing test points.');
     drawCompactionChart();
-  });
+    saveNow();
+  }
 
   /* ---------- calculate ---------- */
-  el('calculateMdd').addEventListener('click',function(){
+  function calculate(silent){
     var msg=el('mddMessage'),note=el('peakNote');
-    if(compactionPoints.length<5){
-      msg.textContent='Enter all five compaction test points before calculating MDD and OMC.';
-      return;
-    }
     var pts=chartPoints();
-    if(pts.some(function(p){return !Number.isFinite(p.w)||!Number.isFinite(p.d)})){
-      msg.textContent='Check all readings. Every point must have valid moisture content and dry density.';
-      return;
+    if(state.points.length<5||pts.length<5){
+      if(!silent)msg.textContent='Enter all five compaction test points before calculating MDD and OMC.';
+      return false;
+    }
+    if(pts.some(function(p){return !isFinite(p.w)||!isFinite(p.d)})){
+      if(!silent)msg.textContent='Check all readings. Every point must have valid moisture content and dry density.';
+      return false;
     }
     for(var i=1;i<pts.length;i++){
       if(pts[i].w-pts[i-1].w<1e-8){
-        msg.textContent='Moisture content values must be different for every point.';
-        return;
+        if(!silent)msg.textContent='Moisture content values must be different for every point.';
+        return false;
       }
     }
     try{
@@ -370,35 +573,209 @@
       var peak=findSplinePeak(spline);
       lastResult={peak:peak,spline:spline};
       el('mddValue').textContent=peak.y.toFixed(3);
+      el('mddKg').textContent='g/cm³ · '+(peak.y*1000).toFixed(0)+' kg/m³';
       el('omcValue').textContent=peak.x.toFixed(2);
+      updateNmc();
       drawCompactionChart();
       var atEdge=peak.x<=pts[0].w+1e-6||peak.x>=pts[pts.length-1].w-1e-6;
       if(atEdge){
         msg.textContent='The curve has no peak inside your data range. Add test points on both sides of the maximum before reporting MDD and OMC.';
         note.textContent='Warning: the highest point of the curve is at the edge of the measured range ('+peak.y.toFixed(3)+' g/cm³ at '+peak.x.toFixed(2)+'%), so it is not a true peak.';
+        note.className='hint bad-text';
       }else{
         msg.textContent='MDD and OMC are read at the top of the smooth curve that passes through every measured point.';
-        note.textContent='Top of curve: MDD '+peak.y.toFixed(3)+' g/cm³ at OMC '+peak.x.toFixed(2)+'% moisture content.';
+        note.textContent='Top of curve: MDD '+peak.y.toFixed(3)+' g/cm³ ('+(peak.y*1000).toFixed(0)+' kg/m³) at OMC '+peak.x.toFixed(2)+'% moisture content.';
+        note.className='hint';
       }
+      return true;
     }catch(err){
-      msg.textContent=err.message||'Unable to calculate the curve. Check the entered data.';
+      if(!silent)msg.textContent=err.message||'Unable to calculate the curve. Check the entered data.';
+      return false;
+    }
+  }
+
+  /* ---------- print + CSV ---------- */
+  function printSheet(){
+    var msg=el('mddMessage');
+    if(state.points.length<5){
+      msg.textContent='Add five valid test points before printing a report.';
+      return;
+    }
+    if(!lastResult&&!calculate(true)){
+      msg.textContent='Check the test points before printing the report.';
+      return;
+    }
+    var info=state.info,meta=[];
+    if(info.project)meta.push('Project: '+info.project);
+    if(info.contractor)meta.push('Contractor: '+info.contractor);
+    if(info.consultant)meta.push('Consultant: '+info.consultant);
+    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
+    if(info.source)meta.push('Source of material: '+info.source);
+    if(info.sampledFrom)meta.push('Sampled from: '+info.sampledFrom);
+    if(info.description)meta.push('Sample description: '+info.description);
+    if(info.purpose)meta.push('Purpose / objective: '+info.purpose);
+    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
+    if(info.checkedBy)meta.push('Checked / verified by: '+info.checkedBy);
+    if(info.dateSampled)meta.push('Date of sampling: '+info.dateSampled);
+    if(info.dateTested)meta.push('Date of testing: '+info.dateTested);
+    if(state.meta.testMethod)meta.push('Test method: '+state.meta.testMethod);
+    if(state.meta.compaction)meta.push('Compaction: '+state.meta.compaction);
+    if(state.mould.id)meta.push('Mould: '+state.mould.id+(state.mould.volume?' · '+state.mould.volume+' cm³':''));
+    if(isFinite(num(info.nmc)))meta.push('NMC: '+fmt(num(info.nmc),2)+' %');
+    var title='Proctor Compaction Test — MDD & OMC'+(info.sampleNo?' — '+info.sampleNo:'');
+    drawCompactionChart(true);
+    if(TK){TK.printReport({title:title,meta:meta});}
+    else{window.print();}
+    drawCompactionChart(false);
+  }
+
+  function exportCsv(){
+    if(!lastResult&&state.points.length>=5)calculate(true);
+    var info=state.info;
+    var rows=[
+      ['Proctor Compaction Test (MDD & OMC)'],
+      ['Project',info.project],
+      ['Contractor',info.contractor],
+      ['Consultant',info.consultant],
+      ['Sample number',info.sampleNo],
+      ['Source of material',info.source],
+      ['Sampled from',info.sampledFrom],
+      ['Sample description',info.description],
+      ['Purpose / objective',info.purpose],
+      ['Tested by',info.testedBy],
+      ['Checked / verified by',info.checkedBy],
+      ['Date of sampling',info.dateSampled],
+      ['Date of testing',info.dateTested],
+      ['Test method',state.meta.testMethod],
+      ['Compaction method',state.meta.compaction],
+      ['Mould ID',state.mould.id],
+      ['Mould mass (g)',state.mould.mass],
+      ['Mould volume (cm3)',state.mould.volume],
+      ['NMC (%)',info.nmc],
+      [],
+      ['Test','Water added (%)','Original sample (g)','Mould + wet soil (g)','Mould mass (g)','Mould volume (cm3)','Wet density (g/cm3)','Container ID','Container (g)','Container + wet soil (g)','Container + dry soil (g)','Moisture (g)','Dry soil (g)','Moisture content (%)','Dry density (g/cm3)','Dry density (kg/m3)']
+    ];
+    state.points.forEach(function(raw,i){
+      var c=calcPoint(raw),ok=c.state==='ok';
+      rows.push([
+        raw.label||('Test '+(i+1)),raw.waterAdded,raw.originalSample,raw.mouldWet,
+        state.mould.mass,state.mould.volume,
+        ok?fmt(c.wetDensity,3):'',raw.containerId,raw.containerMass,raw.containerWet,raw.containerDry,
+        ok?fmt(c.water,2):'',ok?fmt(c.drySample,2):'',ok?fmt(c.w,2):'',
+        ok?fmt(c.dryDensity,3):'',ok?(c.dryDensity*1000).toFixed(0):''
+      ]);
+    });
+    if(lastResult){
+      rows.push([]);
+      rows.push(['MDD (g/cm3)',fmt(lastResult.peak.y,3)]);
+      rows.push(['MDD (kg/m3)',(lastResult.peak.y*1000).toFixed(0)]);
+      rows.push(['OMC (%)',fmt(lastResult.peak.x,2)]);
+    }
+    if(TK){TK.exportCSV('mdd-omc-'+TK.fileStamp()+'.csv',rows);}
+    else{el('mddMessage').textContent='CSV export is not available in this browser.';}
+  }
+
+  /* ---------- reset ---------- */
+  function resetAll(){
+    if(!confirm('Clear all test information, mould details and test points? This cannot be undone.'))return;
+    state=defaultState();
+    editingIndex=null;
+    lastResult=null;
+    fillInfo();fillMould();clearPointForm();
+    renderRows();
+    updateNmc();
+    clearResults('Results will appear after calculating five valid test points.');
+    el('addPoint').textContent='Add test point';
+    el('cancelEdit').hidden=true;
+    el('mddMessage').textContent='Test data cleared.';
+    if(TK)TK.store('mdd-omc').clear();
+    el('saveState').textContent='';
+    drawCompactionChart();
+  }
+
+  function fillInfo(){
+    document.querySelectorAll('[data-info]').forEach(function(input){
+      input.value=state.info[input.dataset.info]||'';
+    });
+    document.querySelectorAll('[data-meta]').forEach(function(input){
+      input.value=state.meta[input.dataset.meta]||'';
+    });
+    document.querySelectorAll('[data-sign]').forEach(function(node){
+      node.textContent=state.info[node.dataset.sign]||'—';
+    });
+  }
+  function fillMould(){
+    document.querySelectorAll('[data-mould]').forEach(function(input){
+      input.value=state.mould[input.dataset.mould]||'';
+    });
+  }
+
+  /* ---------- events ---------- */
+  el('addPoint').addEventListener('click',submitPoint);
+  el('cancelEdit').addEventListener('click',cancelEditMode);
+  el('clearPointForm').addEventListener('click',clearPointForm);
+
+  el('mddRows').addEventListener('click',function(e){
+    var edit=e.target.closest('[data-edit]');
+    if(edit){startEdit(Number(edit.dataset.edit));return;}
+    var btn=e.target.closest('[data-remove-point]');
+    if(!btn)return;
+    var i=Number(btn.dataset.removePoint);
+    var label=state.points[i]&&(state.points[i].label||('Test '+(i+1)));
+    if(!confirm('Remove '+(label||'this test point')+'?'))return;
+    state.points.splice(i,1);
+    if(editingIndex===i)cancelEditMode();
+    else if(editingIndex!==null&&editingIndex>i)editingIndex--;
+    renderRows();
+    clearResults('Recalculate after changing test points.');
+    drawCompactionChart();
+    saveNow();
+  });
+
+  document.addEventListener('input',function(e){
+    var t=e.target;
+    if(!t.dataset)return;
+    if(t.dataset.info){
+      state.info[t.dataset.info]=t.value;
+      document.querySelectorAll('[data-sign]').forEach(function(node){
+        if(node.dataset.sign===t.dataset.info)node.textContent=t.value||'—';
+      });
+      if(t.dataset.info==='nmc')updateNmc();
+      saveSoon();
+    }else if(t.dataset.meta){
+      state.meta[t.dataset.meta]=t.value;
+      saveSoon();
+    }else if(t.dataset.mould){
+      state.mould[t.dataset.mould]=t.value;
+      renderRows();
+      clearResults('Recalculate after changing the mould details.');
+      drawCompactionChart();
+      saveSoon();
     }
   });
 
-  /* ---------- reset ---------- */
-  el('resetMdd').addEventListener('click',function(){
-    compactionPoints.length=0;
-    ['mouldId','mouldMass','mouldVolume','pointLabel','mouldWet','containerMass','containerWet','containerDry'].forEach(function(id){el(id).value=''});
-    renderMddRows();
-    clearResults('Results will appear after calculating five valid test points.');
-    drawCompactionChart();
-    el('mddMessage').textContent='Test data cleared.';
-  });
+  el('calculateMdd').addEventListener('click',function(){calculate(false)});
+  el('btnPrint').addEventListener('click',printSheet);
+  el('btnCsv').addEventListener('click',exportCsv);
+  el('btnReset').addEventListener('click',resetAll);
+  window.addEventListener('afterprint',function(){drawCompactionChart(false)});
+  window.addEventListener('resize',function(){drawCompactionChart(false)});
+  document.addEventListener('themechange',function(){drawCompactionChart(false)});
+  window.addEventListener('beforeunload',saveNow);
 
-  /* ---------- redraw on theme change / resize ---------- */
-  document.addEventListener('themechange',drawCompactionChart);
-  window.addEventListener('resize',drawCompactionChart);
+  /* ---------- start ---------- */
+  restore();
+  fillInfo();
+  fillMould();
+  renderRows();
+  updateNmc();
+  if(state.points.length){
+    clearResults('Saved sheet restored. Press Calculate MDD & OMC.');
+  }else{
+    clearResults('Results will appear after calculating five valid test points.');
+  }
   drawCompactionChart();
+  if(restored)el('mddMessage').textContent='Restored your saved sheet from this browser.';
 })();
 </script>
 </body>
