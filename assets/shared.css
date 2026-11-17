@@ -164,10 +164,12 @@ a.card:hover{border-color:var(--orange);transform:translateY(-2px)}
 }
 @media(max-width:560px){
   .wrap{width:min(1120px,100% - 32px)}
-  nav{min-height:60px}
+  nav{min-height:0;padding:10px 0 8px;flex-wrap:wrap;row-gap:8px}
   .brand{font-size:1rem}
   .logo{width:34px;height:34px}
-  .navlink,.theme{font-size:.82rem;padding:8px}
+  .navright{width:100%;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .navright::-webkit-scrollbar{display:none}
+  .navlink,.theme{font-size:.82rem;padding:8px;flex:0 0 auto;white-space:nowrap}
   .hero{padding:38px 0 18px}
   .grid,.grid-2{grid-template-columns:1fr}
   .fields{grid-template-columns:1fr}

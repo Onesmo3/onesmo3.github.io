@@ -69,10 +69,13 @@ An Android live-TV player application that uses playlist sources to access avail
 *Channel availability depends on playlist sources, stream availability and device compatibility.*
 
 ### 6. Civil Lab Tools
-A collection of digital tools and software ideas inspired by civil engineering laboratory testing, field measurements and quality control.
+Practical civil engineering laboratory calculators and quality-control utilities for field and laboratory work.
 
 - Category: Engineering & Quality Control
-- Status: In Development
+- Status: Live — 3 tools available, more planned
+- [Open Civil Lab Tools](https://onesmo3.github.io/civil-lab-tools.html)
+- Available now: moisture content, MDD & OMC compaction, and sieve analysis (grading, GM & GC)
+- Each calculator includes a printable report, CSV export, and saves its working data in the browser.
 
 ---
 
@@ -82,6 +85,8 @@ A collection of digital tools and software ideas inspired by civil engineering l
 - Dark and light theme switching.
 - Project showcase with application download links.
 - Source-code links to GitHub repositories.
+- Civil Lab Tools hub with automatic ready/planned counts.
+- Lab calculators with save/resume, printable reports and CSV export.
 - About and contact sections.
 - Lightweight static website.
 - No backend or database required.
@@ -93,6 +98,8 @@ A collection of digital tools and software ideas inspired by civil engineering l
 | HTML5 | Website structure |
 | CSS3 | Styling and responsive layout |
 | JavaScript | Theme switching and interactions |
+| Canvas API | Grading and compaction curves |
+| Browser localStorage | Saving lab sheets on the device |
 | GitHub | Source-code hosting |
 | GitHub Pages | Website deployment |
 | Google Drive | APK distribution |
@@ -102,11 +109,24 @@ A collection of digital tools and software ideas inspired by civil engineering l
 ```text
 onesmo3.github.io/
 │
-├── index.html
+├── index.html                 # portfolio home
+├── civil-lab-tools.html       # Civil Lab Tools hub
 ├── README.md
+│
+├── assets/
+│   ├── shared.css             # site-wide styles + print rules
+│   ├── home.css               # portfolio-only styles
+│   ├── shared.js              # theme, footer year, tool counts
+│   └── tool-kit.js            # storage, CSV/JSON export, print helper
+│
+├── tools/
+│   ├── moisture-content.html
+│   ├── mdd-omc.html
+│   └── sieve-analysis.html
 │
 └── icons/
     ├── mbisecad-mark.png
+    ├── mbisecad.png
     ├── fdt-calculator.png
     ├── salary-calculator.png
     ├── todolist.png
@@ -153,12 +173,17 @@ To maintain the portfolio:
 
 1. Update project information in `index.html`.
 2. Verify all APK download links.
-3. Update application descriptions and icons when necessary.
-4. Add new projects when they are ready to showcase.
-5. Commit and push changes to GitHub.
-6. Verify the published website after deployment.
+3. Add or update lab tools in `tools/` and link them from `civil-lab-tools.html`.
+4. Update application descriptions and icons when necessary.
+5. Add new projects when they are ready to showcase.
+6. Commit and push changes to GitHub.
+7. Verify the published website after deployment.
 
-Always test download links before publishing them.
+Always test download links before publishing them. The Civil Lab Tools ready count is calculated automatically from the tool links in the hub.
+
+## 🔒 Lab data
+
+Civil Lab Tools run entirely in the browser. Test data is saved only in the browser's local storage on the device, and CSV/PDF reports are generated locally. No lab data is sent to a server.
 
 ## 🎯 MbiseCAD Vision
 
