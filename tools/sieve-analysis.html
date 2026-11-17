@@ -206,6 +206,9 @@
     if(/^-0(\.0*)?$/.test(s))s=s.slice(1);
     return s;
   }
+  function sieveLabel(size){
+    return Number(size)===0.15?'0.150':String(size);
+  }
   function escapeAttr(v){
     return String(v==null?'':v).replace(/[&<>"]/g,function(ch){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];
@@ -329,10 +332,10 @@
   function buildLimitRows(){
     var h='';
     rows.forEach(function(s,i){
-      var L=limOf(s);
-      h+='<tr><td class="lbl">'+s+' mm</td>'+
-        '<td><input id="lo_'+i+'" type="number" step="any" inputmode="decimal" value="'+(L.lo===null?'':L.lo)+'" aria-label="Lower limit '+s+' mm"></td>'+
-        '<td><input id="hi_'+i+'" type="number" step="any" inputmode="decimal" value="'+(L.hi===null?'':L.hi)+'" aria-label="Upper limit '+s+' mm"></td></tr>';
+      var L=limOf(s),label=sieveLabel(s);
+      h+='<tr><td class="lbl">'+label+' mm</td>'+
+        '<td><input id="lo_'+i+'" type="number" step="any" inputmode="decimal" value="'+(L.lo===null?'':L.lo)+'" aria-label="Lower limit '+label+' mm"></td>'+
+        '<td><input id="hi_'+i+'" type="number" step="any" inputmode="decimal" value="'+(L.hi===null?'':L.hi)+'" aria-label="Upper limit '+label+' mm"></td></tr>';
     });
     el('limitRows').innerHTML=h;
   }
@@ -366,10 +369,10 @@
     for(i=0;i<rows.length;i++){
       var val=escapeAttr(state.retained[form][String(rows[i])]||'');
       if(showC&&i===nc){
-        h+='<tr class="sub"><td class="lbl">Passing '+rows[nc-1]+' mm (m2)</td><td class="num" id="m2cell">—</td><td colspan="'+(nCols-2)+'"></td></tr>';
+        h+='<tr class="sub"><td class="lbl">Passing '+sieveLabel(rows[nc-1])+' mm (m2)</td><td class="num" id="m2cell">—</td><td colspan="'+(nCols-2)+'"></td></tr>';
       }
-      h+='<tr><td class="lbl">'+rows[i]+' mm</td>'+
-        '<td><input id="m_'+i+'" type="number" min="0" step="any" inputmode="decimal" placeholder="0" value="'+val+'" aria-label="Mass retained on '+rows[i]+' mm sieve (g)"></td>'+
+      h+='<tr><td class="lbl">'+sieveLabel(rows[i])+' mm</td>'+
+        '<td><input id="m_'+i+'" type="number" min="0" step="any" inputmode="decimal" placeholder="0" value="'+val+'" aria-label="Mass retained on '+sieveLabel(rows[i])+' mm sieve (g)"></td>'+
         (showC?'<td class="num" id="co_'+i+'">—</td>':'')+
         '<td class="num" id="pr_'+i+'">—</td><td class="num" id="cr_'+i+'">—</td><td class="num" id="cp_'+i+'">—</td><td class="num" id="lm_'+i+'">—</td><td id="st_'+i+'">—</td></tr>';
     }
@@ -470,7 +473,7 @@
         if(L.lo!==null&&r2<L.lo){st='✗ Below limit';cls='bad';isFail=true}
         else if(L.hi!==null&&r2>L.hi){st='✗ Above limit';cls='bad';isFail=true}
         else{st='✓ Pass';cls='ok'}
-        if(isFail)failed.push(rows[i]+' mm');
+        if(isFail)failed.push(sieveLabel(rows[i])+' mm');
       }
       failArr.push(isFail);
 
@@ -721,7 +724,7 @@
     for(var i=0;i<rows.length;i++){
       var L=limOf(rows[i]);
       rowsCsv.push([
-        rows[i],
+        sieveLabel(rows[i]),
         el('m_'+i).value,
         showA&&i>=nc?el('co_'+i).textContent:'',
         el('pr_'+i).textContent,
