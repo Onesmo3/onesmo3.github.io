@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#071a2f">
-<meta name="description" content="Soil moisture content calculator by MbiseCAD — one or more samples with average water content.">
+<meta name="description" content="Soil moisture content calculator by MbiseCAD — lab record sheet with test sets, averages, print report and CSV export.">
 <title>Moisture Content Calculator — MbiseCAD</title>
 <link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
 <style>
-  #mcTable{min-width:520px}
+  :root{--bad:#ff6b6b}
+  [data-theme="light"]{--bad:#c62828}
+  .field.full{grid-column:1 / -1}
+  .bad{color:var(--bad);font-weight:700}
+  .mc-set{padding:16px;border:1px solid var(--line-soft);border-radius:12px;background:var(--bg2)}
+  .mc-set + .mc-set{margin-top:16px}
+  .set-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .set-head h4{font:700 1.05rem/1.2 var(--display);margin:0}
+  .mc-table{min-width:760px}
+  .mc-table td.lbl,.mc-table th{white-space:nowrap}
+  .mc-table td.lbl{font-weight:600}
+  .mc-table input{width:100%;min-width:94px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text)}
+  .mc-table .num{font-variant-numeric:tabular-nums}
+  .mc-table .bad{color:var(--bad);font-weight:700}
+  .mc-table tr.sub td{font-weight:700;background:color-mix(in srgb,var(--panel) 55%,transparent)}
+  .mc-table th .rm{padding:0 6px;margin-left:6px;border:0;background:transparent;color:var(--muted);font-size:1.05rem;line-height:1}
+  .mc-table th .rm:hover{color:var(--bad)}
+  .summary-table{min-width:640px}
+  .signatures{display:none}
+  @media print{
+    #infoCard{display:none!important}
+    .mc-set{border:0;background:#fff;padding:0;margin:0 0 12px;break-inside:avoid}
+    .mc-table{min-width:0}
+    .mc-table th,.mc-table td{padding:5px 7px}
+    .mc-table input{padding:0;border:0;background:#fff;text-align:left}
+    .mc-table th .rm,.set-head .actions{display:none!important}
+    .summary-table{min-width:0}
+    .signatures{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;border-top:1px solid #000;padding-top:10px;font-size:9.5pt}
+    .signatures h4{margin:0 0 8px;font-size:10pt}
+    .signatures p{margin:0 0 14px}
+  }
 </style>
 <script>
   /* Weka theme mapema ili kuepuka flash ya rangi */
@@ -33,56 +63,76 @@
   <section class="hero">
     <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / Moisture Content</p>
     <div class="eyebrow">Soil Testing</div>
-    <h1>Moisture Content Calculator</h1>
-    <p class="lead">Add a sample to see its moisture content. Add more samples to get the average of all samples.</p>
+    <h1>Moisture Content</h1>
+    <p class="lead">Record the test information once, then add the masses for each sample. The sheet calculates moisture content per sample and the average for every test set, and keeps your work in this browser.</p>
   </section>
 
   <section id="moisture-content">
 
-    <div class="tool">
-      <h3>1. Add a sample</h3>
-      <p class="hint">Use the same mass unit for all measurements (for example, grams).</p>
+    <div class="tool" id="infoCard">
+      <h3>1. Test information</h3>
       <div class="fields mt">
-        <div class="field"><label for="label">Sample label (optional)</label><input id="label" type="text" placeholder="e.g. Sample 1"></div>
-        <div class="field"><label for="tare">Mass of container (g)</label><input id="tare" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 25.4"></div>
-        <div class="field"><label for="wet">Container + wet soil (g)</label><input id="wet" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 85.6"></div>
-        <div class="field"><label for="dry">Container + dry soil (g)</label><input id="dry" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 78.2"></div>
+        <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
+        <div class="field"><label for="i-location">Location</label><input id="i-location" type="text" data-info="location" placeholder="e.g. Km 0+012.5 – 0+112.5"></div>
+        <div class="field"><label for="i-description">Description</label><input id="i-description" type="text" data-info="description" placeholder="e.g. Natural gravel material"></div>
+        <div class="field"><label for="i-material">Material source</label><input id="i-material" type="text" data-info="material" placeholder="e.g. Borrow pit"></div>
+        <div class="field"><label for="i-road">Road name</label><input id="i-road" type="text" data-info="road" placeholder="e.g. Road K"></div>
+        <div class="field full"><label for="i-purpose">Purpose / objective</label><input id="i-purpose" type="text" data-info="purpose" placeholder="e.g. C1 trial"></div>
+        <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Optional remarks"></div>
+        <div class="field"><label for="i-testedBy">Tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-dateSampled">Date sampled</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
+        <div class="field"><label for="i-dateTested">Date tested</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
       </div>
-      <div class="actions">
-        <button class="btn primary" id="addSample" type="button">Add sample</button>
-        <button class="btn secondary" id="clearForm" type="button">Clear fields</button>
-      </div>
-      <p class="hint" id="message" role="status" aria-live="polite">Enter the measurements for the first sample.</p>
     </div>
 
     <div class="tool stack">
       <div class="head-row">
-        <h3>2. Samples</h3>
+        <h3>2. Test sets</h3>
         <div class="actions">
-          <button class="btn secondary" id="reset" type="button">Reset all</button>
+          <button class="btn secondary" id="btnAddSet" type="button">Add test set</button>
+          <button class="btn primary" id="btnPrint" type="button">Print report</button>
+          <button class="btn secondary" id="btnCsv" type="button">Export CSV</button>
         </div>
       </div>
-      <div class="table-scroll">
-        <table class="data-table" id="mcTable">
-          <thead><tr>
-            <th>Sample</th>
-            <th class="num">Water mass (g)</th>
-            <th class="num">Dry soil mass (g)</th>
-            <th class="num">Moisture content (%)</th>
-            <th>Action</th>
-          </tr></thead>
-          <tbody id="rows"><tr><td colspan="5" class="empty">No samples added yet.</td></tr></tbody>
-        </table>
-      </div>
+      <p class="hint" id="message" role="status" aria-live="polite">Enter the masses for each sample. A blank row is ignored in the average.</p>
+      <div id="setList"></div>
+      <p class="hint" id="saveState"></p>
     </div>
 
     <div class="tool stack">
-      <h3>3. Result</h3>
-      <div class="grid-2 stack">
-        <div class="tool result"><small id="avgTitle">Moisture content</small><div class="value" id="avgValue">— %</div><small id="avgNote">Add a sample to see the result.</small></div>
-        <div class="tool result"><small>Samples used</small><div class="value" id="countValue">—</div><small id="rangeNote">Range appears with 2 or more samples.</small></div>
+      <div class="head-row">
+        <h3>3. Summary</h3>
+        <div class="actions"><button class="btn secondary" id="btnReset" type="button">Reset all</button></div>
       </div>
-      <div class="formula">w (%) = [(Wet soil mass − Dry soil mass) ÷ Dry soil mass] × 100<br>Average w (%) = sum of all w ÷ number of samples</div>
+      <div class="table-scroll">
+        <table class="data-table summary-table">
+          <thead><tr>
+            <th>Set</th>
+            <th>Chainages</th>
+            <th class="num">Samples used</th>
+            <th class="num">Average moisture (%)</th>
+            <th class="num">Range (%)</th>
+          </tr></thead>
+          <tbody id="summaryRows"><tr><td colspan="5" class="empty">No samples yet.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="formula">Water mass = (Wet soil + container) − (Dry soil + container)<br>Dry soil mass = (Dry soil + container) − Container<br>w (%) = Water mass ÷ Dry soil mass × 100</div>
+    </div>
+
+    <div class="signatures">
+      <div>
+        <h4>FOR CONTRACTOR</h4>
+        <p>Checked by (MT): <span data-sign="testedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="dateTested"></span></p>
+      </div>
+      <div>
+        <h4>FOR ENGINEER</h4>
+        <p>Verified by (ME): <span data-sign="checkedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="dateTested"></span></p>
+      </div>
     </div>
 
     <div class="notice"><strong>Engineering note:</strong> This calculator performs the arithmetic only. Confirm the test procedure, drying requirements, number of determinations, allowed difference between samples, reporting precision and acceptance criteria against the specification or test standard applicable to your project.</div>
@@ -95,115 +145,350 @@
 <script src="../assets/tool-kit.js"></script>
 <script>
 (function(){
-  var samples=[];
-  var fieldIds=['label','tare','wet','dry'];
+  'use strict';
 
-  function el(id){return document.getElementById(id)}
-  function escapeHtml(value){
-    return String(value).replace(/[&<>"']/g,function(ch){
+  var MAX_SAMPLES=6,MIN_SAMPLES=1;
+  var TK=window.MbiseTool||null;
+
+  var el=function(id){return document.getElementById(id)};
+  function escapeHTML(value){
+    return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
     });
   }
-
-  function renderRows(){
-    var body=el('rows');
-    if(!samples.length){
-      body.innerHTML='<tr><td colspan="5" class="empty">No samples added yet.</td></tr>';
-      return;
-    }
-    body.innerHTML=samples.map(function(s,i){
-      return '<tr>'+
-        '<td>'+escapeHtml(s.label)+'</td>'+
-        '<td class="num">'+s.water.toFixed(2)+'</td>'+
-        '<td class="num">'+s.drySoil.toFixed(2)+'</td>'+
-        '<td class="num">'+s.w.toFixed(2)+'</td>'+
-        '<td><button class="btn secondary small" type="button" data-remove="'+i+'">Remove</button></td>'+
-      '</tr>';
-    }).join('');
+  function fmt(n,d){
+    d=d===undefined?2:d;
+    if(typeof n!=='number'||!isFinite(n))return '—';
+    var s=n.toFixed(d);
+    if(/^-0(\.0*)?$/.test(s))s=s.slice(1);
+    return s;
+  }
+  function num(value){
+    var s=String(value==null?'':value).trim();
+    return s===''?NaN:Number(s);
+  }
+  function todayISO(){
+    var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
   }
 
-  function updateResult(){
-    var n=samples.length;
+  /* ---------- state ---------- */
+  function blankSample(){return {chainage:'',side:'',container:'',wet:'',dry:'',tare:''}}
+  function blankSet(){return {samples:[blankSample(),blankSample(),blankSample()]}}
+  function defaultState(){
+    return {
+      info:{project:'',location:'',description:'',material:'',road:'',purpose:'',remarks:'',testedBy:'',checkedBy:'',dateSampled:'',dateTested:todayISO()},
+      sets:[blankSet()]
+    };
+  }
 
-    if(n===0){
-      el('avgTitle').textContent='Moisture content';
-      el('avgValue').textContent='— %';
-      el('avgNote').textContent='Add a sample to see the result.';
-      el('countValue').textContent='—';
-      el('rangeNote').textContent='Range appears with 2 or more samples.';
-      return;
+  var state=defaultState(),restored=false;
+
+  function restore(){
+    if(!TK)return;
+    var saved=TK.store('moisture-content').load(null);
+    if(!saved||typeof saved!=='object')return;
+    restored=true;
+    var base=defaultState();
+    if(saved.info&&typeof saved.info==='object'){
+      Object.keys(base.info).forEach(function(k){
+        if(typeof saved.info[k]==='string')base.info[k]=saved.info[k];
+      });
     }
-
-    if(n===1){
-      el('avgTitle').textContent='Moisture content';
-      el('avgValue').textContent=samples[0].w.toFixed(2)+' %';
-      el('avgNote').textContent='Result of '+samples[0].label+'. Add another sample to get the average.';
-      el('countValue').textContent='1';
-      el('rangeNote').textContent='Range appears with 2 or more samples.';
-      return;
+    if(Object.prototype.toString.call(saved.sets)==='[object Array]'&&saved.sets.length){
+      var sets=[];
+      saved.sets.forEach(function(set){
+        if(!set||Object.prototype.toString.call(set.samples)!=='[object Array]'||!set.samples.length)return;
+        var samples=[];
+        set.samples.forEach(function(smp){
+          if(!smp||typeof smp!=='object')return;
+          samples.push({
+            chainage:String(smp.chainage||''),
+            side:String(smp.side||''),
+            container:String(smp.container||''),
+            wet:String(smp.wet||''),
+            dry:String(smp.dry||''),
+            tare:String(smp.tare||'')
+          });
+        });
+        if(samples.length)sets.push({samples:samples});
+      });
+      if(sets.length)base.sets=sets;
     }
+    state=base;
+  }
 
-    var sum=0,min=Infinity,max=-Infinity;
-    samples.forEach(function(s){
-      sum+=s.w;
-      if(s.w<min)min=s.w;
-      if(s.w>max)max=s.w;
+  var saveSoon=TK?TK.debounce(saveNow,500):function(){};
+  function saveNow(){
+    if(!TK)return;
+    var ok=TK.store('moisture-content').save(state);
+    var status=el('saveState');
+    if(status){
+      var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
+      status.textContent=ok?('Saved in this browser at '+p(d.getHours())+':'+p(d.getMinutes())+'.'):'Could not save in this browser.';
+      status.className='hint'+(ok?'':' bad');
+    }
+  }
+
+  /* ---------- render ---------- */
+  function renderSets(){
+    var host=el('setList'),html='';
+    state.sets.forEach(function(set,si){
+      var n=set.samples.length;
+      html+='<article class="mc-set" data-set="'+si+'">'+
+        '<div class="set-head"><h4>Test set '+(si+1)+'</h4><div class="actions">'+
+          '<button class="btn secondary small" type="button" data-act="add-sample" data-set="'+si+'">Add sample</button>'+
+          '<button class="btn secondary small" type="button" data-act="remove-set" data-set="'+si+'">Remove set</button>'+
+        '</div></div>';
+      html+='<div class="table-scroll"><table class="data-table mc-table"><thead><tr><th>Parameter</th>';
+      for(var i=0;i<n;i++){
+        html+='<th>Sample '+(i+1);
+        if(n>MIN_SAMPLES)html+=' <button class="rm" type="button" data-act="remove-sample" data-set="'+si+'" data-i="'+i+'" aria-label="Remove sample '+(i+1)+'">×</button>';
+        html+='</th>';
+      }
+      html+='</tr></thead><tbody>';
+      html+=inputRow(si,'chainage','Chainage','text','e.g. 0+075');
+      html+=inputRow(si,'side','Side','text','LHS / CL / RHS');
+      html+=inputRow(si,'container','Container no.','text','e.g. 1');
+      html+=inputRow(si,'wet','Weight of wet soil + container (g)','number','e.g. 618');
+      html+=inputRow(si,'dry','Weight of dry soil + container (g)','number','e.g. 574.6');
+      html+=inputRow(si,'tare','Weight of container (g)','number','e.g. 174.2');
+      html+='<tr><td class="lbl">Weight of moisture (g)</td>';
+      for(i=0;i<n;i++)html+='<td class="num computed" id="water-'+si+'-'+i+'">—</td>';
+      html+='</tr>';
+      html+='<tr><td class="lbl">Mass of dry soil (g)</td>';
+      for(i=0;i<n;i++)html+='<td class="num computed" id="drysoil-'+si+'-'+i+'">—</td>';
+      html+='</tr>';
+      html+='<tr><td class="lbl">Moisture content (%)</td>';
+      for(i=0;i<n;i++)html+='<td class="num computed" id="w-'+si+'-'+i+'">—</td>';
+      html+='</tr>';
+      html+='<tr class="sub"><td class="lbl">Average moisture content (%)</td><td class="num" colspan="'+n+'" id="avg-'+si+'">—</td></tr>';
+      html+='</tbody></table></div>';
+      html+='<p class="hint" id="note-'+si+'">Enter masses for at least one sample.</p>';
+      html+='</article>';
     });
-    var avg=sum/n;
-    el('avgTitle').textContent='Average moisture content';
-    el('avgValue').textContent=avg.toFixed(2)+' %';
-    el('avgNote').textContent='Average of '+n+' samples';
-    el('countValue').textContent=String(n);
-    el('rangeNote').textContent='Range: '+(max-min).toFixed(2)+' % (lowest '+min.toFixed(2)+' %, highest '+max.toFixed(2)+' %)';
+    host.innerHTML=html;
   }
 
-  function clearForm(){fieldIds.forEach(function(id){el(id).value=''})}
+  function inputRow(si,field,label,type,placeholder){
+    var html='<tr><td class="lbl">'+escapeHTML(label)+'</td>';
+    var set=state.sets[si];
+    set.samples.forEach(function(smp,i){
+      html+='<td><input type="'+type+'"'+(type==='number'?' min="0" step="any" inputmode="decimal"':'')+
+        ' data-set="'+si+'" data-i="'+i+'" data-f="'+field+'" value="'+escapeHTML(smp[field])+'"'+
+        ' placeholder="'+escapeHTML(placeholder)+'" aria-label="'+escapeHTML(label+' sample '+(i+1))+'"></td>';
+    });
+    return html+'</tr>';
+  }
 
-  el('addSample').addEventListener('click',function(){
-    var message=el('message');
-    var numIds=['tare','wet','dry'];
-    if(numIds.some(function(id){return el(id).value.trim()===''})){
-      message.textContent='Please enter all three measurements.';
+  /* ---------- calculation ---------- */
+  function sampleCalc(smp){
+    var wet=num(smp.wet),dry=num(smp.dry),tare=num(smp.tare);
+    if(isNaN(wet)||isNaN(dry)||isNaN(tare))return {state:'blank'};
+    if(!isFinite(wet)||!isFinite(dry)||!isFinite(tare))return {state:'error'};
+    var water=wet-dry,drySoil=dry-tare;
+    if(wet<0||dry<0||tare<0||water<0||drySoil<=0)return {state:'error'};
+    return {state:'ok',water:water,drySoil:drySoil,w:water/drySoil*100};
+  }
+
+  function recalc(){
+    var all=[],allCount=0,setRows=[];
+    state.sets.forEach(function(set,si){
+      var vals=[],errors=0,blanks=0;
+      set.samples.forEach(function(smp,i){
+        var r=sampleCalc(smp);
+        if(r.state==='error')errors++;
+        else if(r.state==='blank')blanks++;
+        else {vals.push(r.w);all.push(r.w);allCount++;}
+        el('water-'+si+'-'+i).textContent=r.state==='ok'?fmt(r.water,2):'—';
+        el('drysoil-'+si+'-'+i).textContent=r.state==='ok'?fmt(r.drySoil,2):'—';
+        var cell=el('w-'+si+'-'+i);
+        cell.textContent=r.state==='ok'?fmt(r.w,2):(r.state==='error'?'check':'—');
+        cell.className='num computed'+(r.state==='error'?' bad':'');
+      });
+      var avg=vals.length?vals.reduce(function(a,b){return a+b},0)/vals.length:NaN;
+      var min=vals.length?Math.min.apply(null,vals):NaN;
+      var max=vals.length?Math.max.apply(null,vals):NaN;
+      el('avg-'+si).textContent=vals.length?fmt(avg,2):'—';
+      var note=el('note-'+si);
+      if(errors){note.textContent='Check the highlighted readings: wet soil must not be lighter than dry soil, and the dry soil mass must be positive.';note.className='hint bad'}
+      else if(!vals.length){note.textContent='Enter wet, dry and container masses for at least one sample.';note.className='hint'}
+      else{note.textContent='Average of '+vals.length+' sample'+(vals.length>1?'s':'')+(blanks?' · '+blanks+' blank row'+(blanks>1?'s':'')+' ignored':'')+'.';note.className='hint'}
+      var chainages=set.samples.map(function(s){return s.chainage.trim()}).filter(function(v){return v});
+      setRows.push({set:si+1,chainages:chainages,n:vals.length,avg:avg,range:vals.length>1?max-min:NaN});
+    });
+
+    renderSummary(setRows,all,allCount);
+  }
+
+  function renderSummary(rows,all,allCount){
+    var body=el('summaryRows');
+    if(!allCount){
+      body.innerHTML='<tr><td colspan="5" class="empty">No complete samples yet.</td></tr>';
       return;
     }
-    var v=numIds.map(function(id){return Number(el(id).value)});
-    if(!v.every(Number.isFinite)){
-      message.textContent='Please enter all three measurements as numbers.';
-      return;
+    var html=rows.map(function(r){
+      if(!r.n)return '<tr><td class="lbl">Set '+r.set+'</td><td>'+(r.chainages.join(' · ')||'—')+'</td><td class="num">0</td><td class="num">—</td><td class="num">—</td></tr>';
+      return '<tr><td class="lbl">Set '+r.set+'</td><td>'+escapeHTML(r.chainages.join(' · ')||'—')+'</td>'+
+        '<td class="num">'+r.n+'</td><td class="num">'+fmt(r.avg,2)+'</td><td class="num">'+fmt(r.range,2)+'</td></tr>';
+    }).join('');
+    var grand=all.reduce(function(a,b){return a+b},0)/allCount;
+    var lo=Math.min.apply(null,all),hi=Math.max.apply(null,all);
+    html+='<tr class="sub"><td class="lbl">Overall</td><td></td><td class="num">'+allCount+'</td>'+
+      '<td class="num">'+fmt(grand,2)+'</td><td class="num">'+fmt(allCount>1?hi-lo:NaN,2)+'</td></tr>';
+    body.innerHTML=html;
+  }
+
+  /* ---------- info ---------- */
+  function fillInfo(){
+    document.querySelectorAll('[data-info]').forEach(function(input){
+      input.value=state.info[input.dataset.info]||'';
+    });
+    document.querySelectorAll('[data-sign]').forEach(function(node){
+      var v=state.info[node.dataset.sign]||'';
+      node.textContent=v||'—';
+    });
+  }
+
+  /* ---------- actions ---------- */
+  function addSet(){
+    if(state.sets.length>=12){el('message').textContent='A maximum of 12 test sets is allowed on one sheet.';return}
+    state.sets.push(blankSet());
+    renderSets();recalc();saveNow();
+    var sets=el('setList').querySelectorAll('.mc-set');
+    if(sets.length)sets[sets.length-1].scrollIntoView({block:'nearest',behavior:'smooth'});
+    el('message').textContent='Test set '+state.sets.length+' added.';
+  }
+
+  function removeSet(si){
+    var wasOnly=state.sets.length===1;
+    if(wasOnly){
+      if(!confirm('This is the only test set. Clear its samples instead?'))return;
+      state.sets[0]=blankSet();
+    }else{
+      if(!confirm('Remove test set '+(si+1)+'?'))return;
+      state.sets.splice(si,1);
     }
-    var tare=v[0],wet=v[1],dry=v[2];
-    var wetSoil=wet-tare,drySoil=dry-tare,water=wet-dry;
-    if(tare<0||wetSoil<=0||drySoil<=0||water<0){
-      message.textContent='Check the masses: wet soil must not be lighter than dry soil, and both soil masses must be positive.';
-      return;
-    }
-    var w=water/drySoil*100;
-    var label=el('label').value.trim()||('Sample '+(samples.length+1));
-    samples.push({label:label,water:water,drySoil:drySoil,w:w});
-    renderRows();
-    updateResult();
-    clearForm();
-    message.textContent=label+' added ('+w.toFixed(2)+' %). '+(samples.length===1?'Add another sample to get the average, or use this result.':'Add more samples or read the average below.');
+    renderSets();recalc();saveNow();
+    el('message').textContent=wasOnly?'Test set cleared.':'Test set removed.';
+  }
+
+  function addSample(si){
+    var set=state.sets[si];
+    if(set.samples.length>=MAX_SAMPLES){el('message').textContent='A test set can hold up to '+MAX_SAMPLES+' samples.';return}
+    set.samples.push(blankSample());
+    renderSets();recalc();saveNow();
+  }
+
+  function removeSample(si,i){
+    var set=state.sets[si];
+    if(set.samples.length<=MIN_SAMPLES)return;
+    set.samples.splice(i,1);
+    renderSets();recalc();saveNow();
+  }
+
+  function resetAll(){
+    if(!confirm('Clear the test information and all samples? This cannot be undone.'))return;
+    state=defaultState();
+    fillInfo();renderSets();recalc();
+    if(TK)TK.store('moisture-content').clear();
+    el('saveState').textContent='';
+    el('message').textContent='Sheet cleared. Enter the masses for the first sample.';
+  }
+
+  function printReport(){
+    var info=state.info,meta=[];
+    if(info.project)meta.push('Project: '+info.project);
+    if(info.location)meta.push('Location: '+info.location);
+    if(info.description)meta.push('Description: '+info.description);
+    if(info.material)meta.push('Material source: '+info.material);
+    if(info.road)meta.push('Road name: '+info.road);
+    if(info.purpose)meta.push('Purpose / objective: '+info.purpose);
+    if(info.remarks)meta.push('Remarks: '+info.remarks);
+    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
+    if(info.checkedBy)meta.push('Checked by: '+info.checkedBy);
+    if(info.dateSampled)meta.push('Date sampled: '+info.dateSampled);
+    if(info.dateTested)meta.push('Date tested: '+info.dateTested);
+    var title='Moisture Content'+(info.road?' — '+info.road:'');
+    if(TK){TK.printReport({title:title,meta:meta});}
+    else{window.print();}
+  }
+
+  function exportCsv(){
+    var info=state.info;
+    var rows=[
+      ['Moisture Content'],
+      ['Project',info.project],
+      ['Location',info.location],
+      ['Description',info.description],
+      ['Material source',info.material],
+      ['Road name',info.road],
+      ['Purpose / objective',info.purpose],
+      ['Remarks',info.remarks],
+      ['Tested by',info.testedBy],
+      ['Checked by',info.checkedBy],
+      ['Date sampled',info.dateSampled],
+      ['Date tested',info.dateTested],
+      [],
+      ['Set','Sample','Chainage','Side','Container no.','Wet soil + container (g)','Dry soil + container (g)','Container (g)','Moisture (g)','Dry soil (g)','Moisture content (%)']
+    ];
+    state.sets.forEach(function(set,si){
+      var vals=[];
+      set.samples.forEach(function(smp,i){
+        var r=sampleCalc(smp);
+        if(r.state==='ok')vals.push(r.w);
+        rows.push([
+          si+1,i+1,smp.chainage,smp.side,smp.container,smp.wet,smp.dry,smp.tare,
+          r.state==='ok'?fmt(r.water,2):'',r.state==='ok'?fmt(r.drySoil,2):'',r.state==='ok'?fmt(r.w,2):''
+        ]);
+      });
+      rows.push(['Set '+(si+1)+' average','','','','','','','','','',vals.length?fmt(vals.reduce(function(a,b){return a+b},0)/vals.length,2):'']);
+    });
+    if(TK){TK.exportCSV('moisture-content-'+(TK.fileStamp())+'.csv',rows);}
+    else{el('message').textContent='CSV export is not available in this browser.';}
+  }
+
+  /* ---------- events ---------- */
+  el('setList').addEventListener('input',function(e){
+    var t=e.target;
+    if(!t.dataset||!t.dataset.f)return;
+    var si=Number(t.dataset.set),i=Number(t.dataset.i),f=t.dataset.f;
+    if(!state.sets[si]||!state.sets[si].samples[i])return;
+    state.sets[si].samples[i][f]=t.value;
+    recalc();saveSoon();
   });
 
-  el('clearForm').addEventListener('click',clearForm);
-
-  el('rows').addEventListener('click',function(e){
-    var btn=e.target.closest('[data-remove]');
-    if(!btn) return;
-    samples.splice(Number(btn.dataset.remove),1);
-    renderRows();
-    updateResult();
-    el('message').textContent='Sample removed.';
+  el('setList').addEventListener('click',function(e){
+    var btn=e.target.closest('[data-act]');
+    if(!btn)return;
+    var si=Number(btn.dataset.set),act=btn.dataset.act;
+    if(act==='add-sample')addSample(si);
+    else if(act==='remove-sample')removeSample(si,Number(btn.dataset.i));
+    else if(act==='remove-set')removeSet(si);
   });
 
-  el('reset').addEventListener('click',function(){
-    samples.length=0;
-    clearForm();
-    renderRows();
-    updateResult();
-    el('message').textContent='All samples cleared. Enter the measurements for the first sample.';
+  document.querySelectorAll('[data-info]').forEach(function(input){
+    input.addEventListener('input',function(){
+      state.info[input.dataset.info]=input.value;
+      document.querySelectorAll('[data-sign]').forEach(function(node){
+        if(node.dataset.sign===input.dataset.info)node.textContent=input.value||'—';
+      });
+      saveSoon();
+    });
   });
+
+  el('btnAddSet').addEventListener('click',addSet);
+  el('btnPrint').addEventListener('click',printReport);
+  el('btnCsv').addEventListener('click',exportCsv);
+  el('btnReset').addEventListener('click',resetAll);
+  window.addEventListener('beforeunload',saveNow);
+
+  /* ---------- start ---------- */
+  restore();
+  fillInfo();
+  renderSets();
+  recalc();
+  if(restored)el('message').textContent='Restored your saved sheet from this browser.';
 })();
 </script>
 </body>
