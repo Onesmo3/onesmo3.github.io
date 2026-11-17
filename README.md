@@ -42,7 +42,7 @@ An Android application designed to calculate salary estimates using Tanzania-rel
 - Platform: Android
 - Category: Finance & Productivity
 - [Download APK](https://drive.google.com/file/d/1A5WQy_G2CgaFk5lJ-83B8U-H1wg8xvQA/view?usp=drivesdk)
-- [View Source Code](https://github.com/Onesmo3/salary-calculator)
+- [Find on GitHub](https://github.com/Onesmo3?tab=repositories)
 
 ### 3. ToDoList
 A task-management application designed to help users organise activities and manage everyday tasks.
@@ -50,7 +50,7 @@ A task-management application designed to help users organise activities and man
 - Platform: Android
 - Category: Productivity
 - [Download APK](https://drive.google.com/file/d/1IDmyuLoMqn1oRq9Y16sAUbTruL3OjY_b/view?usp=drivesdk)
-- [View Source Code](https://github.com/Onesmo3/ToDoList)
+- [Find on GitHub](https://github.com/Onesmo3?tab=repositories)
 
 ### 4. MDDCalc
 A calculator application developed to support soil compaction and Maximum Dry Density (MDD) workflows.
