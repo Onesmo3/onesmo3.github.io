@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071a2f">
+<meta name="description" content="California Bearing Ratio (CBR) calculator by MbiseCAD — CBR mould, soaking, swell, penetration and CBR at 95% MDD with printable report.">
+<title>CBR Test Calculator — MbiseCAD</title>
+<link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/shared.css">
+<style>
+  :root{--bad:#ff6b6b}
+  [data-theme="light"]{--bad:#c62828}
+  #pointTable{min-width:820px}
+  #pointTable td.lbl{white-space:nowrap;color:var(--muted);font-weight:600}
+  #pointTable td{padding:6px 8px;vertical-align:middle}
+  #pointTable th{padding:9px 8px}
+  #pointTable input{padding:7px 8px;border-radius:8px}
+  #pointTable input[type="text"]{min-width:105px}
+  #pointTable .group-row td{padding:9px 8px;background:color-mix(in srgb,var(--bg2) 70%,transparent);color:var(--text);font:700 .82rem var(--cond);letter-spacing:.04em;text-transform:uppercase;border-top:1px solid var(--line)}
+  #pointTable .num{text-align:right;font-variant-numeric:tabular-nums}
+  #pointTable .calc-val{font-weight:600;color:var(--text)}
+  #penTable{min-width:720px}
+  #penTable td,#penTable th{padding:6px 8px}
+  #penTable input{width:90px;padding:7px 8px;border-radius:8px;text-align:right}
+  #penTable .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pen-note{font:500 .68rem/1.25 var(--body);color:var(--muted);margin-top:3px;text-transform:none;letter-spacing:0}
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  .chart-card{padding:18px}
+  .chart-card h4{margin:0 0 4px;font:700 1rem/1.2 var(--display)}
+  .chart-card .hint{margin:0 0 6px;font-size:.78rem}
+  .chart-card .chart-wrap{margin-top:4px}
+  .chart-card canvas{height:260px}
+  #trendTable{min-width:420px}
+  #trendTable .key-row td{font-weight:700;background:color-mix(in srgb,var(--orange) 12%,transparent)}
+  .result .value .unit{font:600 .95rem/1 var(--body);color:var(--muted);margin-left:6px}
+  .signatures{display:none}
+  .remarks-out{display:none}
+  @page{size:A4 landscape;margin:10mm}
+  @media print{
+    #infoCard,#setupCard{display:none!important}
+    #pointTable,#penTable{min-width:0}
+    #pointTable th,#pointTable td,#penTable th,#penTable td{padding:3px 4px;font-size:8pt}
+    #pointTable input,#penTable input{font-size:8pt;padding:0 2px;text-align:right}
+    #pointTable input[type="text"]{text-align:left}
+    #pointTable .group-row td{font-size:7.5pt;padding:4px}
+    #pointTable .lbl{white-space:normal}
+    #penTable input{width:56px}
+    .chart-grid{grid-template-columns:1fr 1fr!important;gap:6px}
+    .chart-card{padding:5px;break-inside:avoid}
+    .chart-card h4{font-size:8.5pt}
+    .chart-card .chart-wrap canvas{height:195px!important}
+    #trendTable{min-width:0}
+    #trendTable td,#trendTable th{padding:3px 5px}
+    #resultsCard .grid{grid-template-columns:repeat(3,1fr)!important;gap:6px}
+    .result .value{font-size:15pt}
+    .trend-controls{display:none!important}
+    .signatures{display:grid!important;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px;border-top:1px solid #000;padding-top:8px;font-size:8.5pt}
+    .signatures h4{margin:0 0 6px;font-size:9pt}
+    .signatures p{margin:0 0 10px}
+    .remarks-out{display:block;margin:10px 0 0;padding:6px 0 0;border-top:1px solid #000;font-size:9pt}
+  }
+  @media(max-width:800px){.chart-grid{grid-template-columns:1fr}}
+</style>
+<script>
+  /* Weka theme mapema ili kuepuka flash ya rangi */
+  try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
+</script>
+</head>
+<body>
+
+<header class="topbar"><div class="wrap"><nav>
+  <a class="brand" href="../index.html"><img class="logo" src="../icons/mbisecad-mark.png" alt=""><span>MbiseCAD</span></a>
+  <div class="navright">
+    <a class="navlink" href="../civil-lab-tools.html">← Civil Lab Tools</a>
+    <button class="theme" id="themeBtn" type="button" aria-label="Switch colour theme">☀️ Light</button>
+  </div>
+</nav></div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / CBR</p>
+    <div class="eyebrow">Soil Testing</div>
+    <h1>California Bearing Ratio — CBR</h1>
+    <p class="lead">Record the three CBR test points, soaked moisture and swell, then enter the penetration readings. CBR at 2.5 mm and 5.0 mm, the logarithmic trend and CBR at 95% MDD update as you type.</p>
+  </section>
+
+  <section id="cbr">
+
+    <div class="tool" id="infoCard">
+      <h3>1. Test information</h3>
+      <div class="fields mt">
+        <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
+        <div class="field"><label for="i-location">Location</label><input id="i-location" type="text" data-info="location" placeholder="e.g. Km 345 borrow pit"></div>
+        <div class="field"><label for="i-sampleNo">Sample number</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/002"></div>
+        <div class="field"><label for="i-materialSource">Material source</label><input id="i-materialSource" type="text" data-info="materialSource" placeholder="e.g. Quality control"></div>
+        <div class="field"><label for="i-materialFrom">Material from</label><input id="i-materialFrom" type="text" data-info="materialFrom" placeholder="e.g. Borrow pit"></div>
+        <div class="field"><label for="i-testedBy">Tested / prepared by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-verifiedBy">Verified by (optional)</label><input id="i-verifiedBy" type="text" data-info="verifiedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-dateSampled">Date of sampling</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
+        <div class="field"><label for="i-dateCompaction">Date of compaction</label><input id="i-dateCompaction" type="date" data-info="dateCompaction"></div>
+        <div class="field"><label for="i-datePenetration">Date of penetration</label><input id="i-datePenetration" type="date" data-info="datePenetration"></div>
+        <div class="field full"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-info="testMethod" placeholder="e.g. CML TEST 1.10, Ref. BS 1377: Part 4: 1990"></div>
+        <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Optional remarks"></div>
+      </div>
+    </div>
+
+    <div class="tool stack" id="setupCard">
+      <h3>2. Compaction targets and equipment</h3>
+      <div class="fields mt">
+        <div class="field"><label for="s-compactionMethod">Compaction method</label><input id="s-compactionMethod" type="text" data-setup="compactionMethod" placeholder="e.g. Three Point Method"></div>
+        <div class="field"><label for="s-mddPercent">Density of MDD (%)</label><input id="s-mddPercent" type="number" min="0" step="any" inputmode="decimal" data-setup="mddPercent" placeholder="e.g. 100" readonly aria-readonly="true" title="The target MDD is the 100% MDD reference; the summary uses 90–100% of this value."></div>
+        <div class="field"><label for="s-targetMdd">Target MDD (kg/m³)</label><input id="s-targetMdd" type="number" min="0" step="any" inputmode="decimal" data-setup="targetMdd" placeholder="e.g. 2065.19"></div>
+        <div class="field"><label for="s-targetOmc">Target OMC (%)</label><input id="s-targetOmc" type="number" min="0" step="any" inputmode="decimal" data-setup="targetOmc" placeholder="e.g. 8.706"></div>
+        <div class="field"><label for="s-nmc">Natural moisture content, NMC (%)</label><input id="s-nmc" type="number" min="0" step="any" inputmode="decimal" data-setup="nmc" placeholder="e.g. 1.005"></div>
+        <div class="field"><label for="s-soakDays">Soaking (days)</label><input id="s-soakDays" type="number" min="0" step="1" inputmode="numeric" data-setup="soakDays" placeholder="e.g. 4"></div>
+        <div class="field"><label for="s-provingRing">Proving ring factor (kN/division)</label><input id="s-provingRing" type="number" min="0" step="any" inputmode="decimal" data-setup="provingRing" placeholder="e.g. 0.2343"></div>
+        <div class="field"><label for="s-plungerDia">Plunger diameter (mm)</label><input id="s-plungerDia" type="number" min="0" step="any" inputmode="decimal" data-setup="plungerDia" placeholder="e.g. 49.65"></div>
+        <div class="field"><label for="s-plungerArea">Plunger area (mm²)</label><input id="s-plungerArea" type="number" min="0" step="any" inputmode="decimal" data-setup="plungerArea" placeholder="e.g. 1935"></div>
+        <div class="field"><label for="s-sampleHeight">Sample height for swell (mm)</label><input id="s-sampleHeight" type="number" min="0" step="any" inputmode="decimal" data-setup="sampleHeight" placeholder="e.g. 127"></div>
+        <div class="field"><label for="s-initialMass">Initial sample mass per test (g)</label><input id="s-initialMass" type="number" min="0" step="any" inputmode="decimal" data-setup="initialMass" placeholder="e.g. 6000"></div>
+      </div>
+      <div class="formula" id="waterNote">Water to add for OMC = (OMC − NMC) × initial sample mass ÷ (100 + NMC).</div>
+      <p class="hint">The three CBR moulds normally use 2305 cm³. Use the target MDD, OMC and NMC determined from the compaction sheet for the same material.</p>
+    </div>
+
+    <div class="tool stack">
+      <h3>3. CBR test points</h3>
+      <p class="hint">Enter masses in grams. Pre-compaction moisture is used for the dry density; the after-soaking moisture is reported separately. Use one row per test (A, B and C).</p>
+      <div class="table-scroll">
+        <table class="data-table" id="pointTable">
+          <thead><tr><th>Parameter</th><th>Test A</th><th>Test B</th><th>Test C</th></tr></thead>
+          <tbody id="pointBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tool stack">
+      <h3>4. Penetration readings</h3>
+      <p class="hint">Enter the dial gauge reading at each penetration. Force = dial reading × proving ring factor. CBR at 2.5 mm = force ÷ 13.2 × 100; CBR at 5.0 mm = force ÷ 20 × 100.</p>
+      <div class="table-scroll">
+        <table class="data-table" id="penTable">
+          <thead>
+            <tr>
+              <th rowspan="2">Penetration (mm)</th>
+              <th colspan="2">Test A<div class="pen-note" id="penNoteA"></div></th>
+              <th colspan="2">Test B<div class="pen-note" id="penNoteB"></div></th>
+              <th colspan="2">Test C<div class="pen-note" id="penNoteC"></div></th>
+            </tr>
+            <tr><th class="num">Dial</th><th class="num">Force (kN)</th><th class="num">Dial</th><th class="num">Force (kN)</th><th class="num">Dial</th><th class="num">Force (kN)</th></tr>
+          </thead>
+          <tbody id="penBody"></tbody>
+        </table>
+      </div>
+      <div class="formula">Force (kN) = dial reading × proving ring factor. The CBR values are calculated at exactly 2.5 mm and 5.0 mm.</div>
+    </div>
+
+    <div class="tool stack" id="resultsCard">
+      <div class="head-row">
+        <h3>5. CBR results</h3>
+        <div class="actions">
+          <button class="btn secondary" id="btnPrint" type="button">Print report</button>
+          <button class="btn secondary" id="btnCsv" type="button">Export CSV</button>
+          <button class="btn secondary" id="btnReset" type="button">Reset sheet</button>
+        </div>
+      </div>
+      <div class="grid stack">
+        <div class="tool result"><small>CBR at 95% MDD</small><div class="value" id="cbr95">—</div><small id="cbr95Note">%</small></div>
+        <div class="tool result"><small>95% MDD dry density</small><div class="value" id="density95">—</div><small>kg/m³</small></div>
+        <div class="tool result"><small>Water to add for OMC</small><div class="value" id="waterAdd">—</div><small>ml per test</small></div>
+      </div>
+      <p class="hint" id="message" role="status" aria-live="polite">Enter the target MDD, proving ring factor and test data. Results update as you type.</p>
+      <div class="trend-controls fields mt">
+        <div class="field"><label for="trendBasis">Trend basis</label><select id="trendBasis" data-setup="trendBasis"><option value="2.5">CBR at 2.5 mm</option><option value="5">CBR at 5.0 mm</option></select></div>
+        <div class="field"><label for="trendA">Coefficient a (optional)</label><input id="trendA" type="number" step="any" inputmode="decimal" data-trend="a" placeholder="auto-fit"></div>
+        <div class="field"><label for="trendB">Coefficient b (optional)</label><input id="trendB" type="number" step="any" inputmode="decimal" data-trend="b" placeholder="auto-fit"></div>
+        <div class="field"><label>&nbsp;</label><div class="actions" style="margin:0"><button class="btn secondary" id="fitTrend" type="button">Fit from tests</button><button class="btn secondary" id="autoTrend" type="button">Auto-fit</button></div></div>
+      </div>
+      <div class="formula" id="trendEq">Enter at least two valid CBR points to fit a logarithmic trend.</div>
+      <div class="table-scroll">
+        <table class="data-table" id="trendTable">
+          <thead><tr><th>Compaction (% MDD)</th><th class="num">Dry density (kg/m³)</th><th class="num">CBR (%)</th></tr></thead>
+          <tbody id="trendBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">The trend is CBR = a × ln(dry density) + b. It is fitted from the measured CBR points by least squares; enter a and b to use a project-specific design curve.</p>
+      <p class="hint" id="saveState"></p>
+    </div>
+
+    <div class="tool stack" id="chartsCard">
+      <h3>6. Charts</h3>
+      <p class="hint">Force–penetration, CBR–density, CBR–compaction and swell–compaction charts are redrawn from the current sheet. Print in colour or save as PDF.</p>
+      <div class="chart-grid">
+        <div class="tool chart-card"><h4>Force vs plunger penetration</h4><div class="chart-wrap"><canvas id="penChart" height="260"></canvas></div></div>
+        <div class="tool chart-card"><h4>CBR vs dry density</h4><div class="chart-wrap"><canvas id="cbrDensityChart" height="260"></canvas></div></div>
+        <div class="tool chart-card"><h4>CBR vs compaction</h4><div class="chart-wrap"><canvas id="cbrCompactionChart" height="260"></canvas></div></div>
+        <div class="tool chart-card"><h4>Swell vs compaction</h4><div class="chart-wrap"><canvas id="swellChart" height="260"></canvas></div></div>
+      </div>
+    </div>
+
+    <p class="remarks-out" id="remarksOut"></p>
+
+    <div class="signatures">
+      <div>
+        <h4>PREPARED BY</h4>
+        <p>Name: <span data-sign="testedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="date"></span></p>
+        <p>Assistant Materials Technician</p>
+      </div>
+      <div>
+        <h4>CHECKED BY</h4>
+        <p>Name: <span data-sign="checkedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="date"></span></p>
+        <p>Consultant's Materials Technician</p>
+      </div>
+      <div>
+        <h4>VERIFIED BY</h4>
+        <p>Name: <span data-sign="verifiedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="date"></span></p>
+        <p>Consultant's Materials Engineer</p>
+      </div>
+    </div>
+
+    <div class="notice"><strong>Engineering note:</strong> CBR is calculated at 2.5 mm and 5.0 mm from the proving-ring force. The 95% MDD value is read from a logarithmic trend fitted to the measured CBR points, not from a single mould. If the 5.0 mm CBR is higher than the 2.5 mm value, check the test and the project specification before reporting. Confirm the compaction method, soaking period, proving-ring calibration, moisture determination and reporting requirements against BS 1377 or the project specification. This tool does not determine acceptance or replace engineering review.</div>
+
+  </section>
+</main>
+
+<footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
+
+<script src="../assets/shared.js"></script>
+<script src="../assets/tool-kit.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var TK=window.MbiseTool||null;
+  var el=function(id){return document.getElementById(id)};
+  var POINTS=['A','B','C'];
+  var PEN_STEPS=(function(){var a=[];for(var i=0;i<=15;i++)a.push(i/2);return a;})();
+  var POINT_FIELDS=['mouldNo','volume','compaction','mouldWet','mouldMass','containerNo','wetCont','dryCont','contMass','soakContainerNo','soakWetCont','soakDryCont','soakContMass','initialDial','finalDial'];
+
+  var POINT_ROWS=[
+    {group:'Mould and density'},
+    {key:'mouldNo',label:'Mould no.',type:'text',ph:'e.g. 6'},
+    {key:'volume',label:'Volume of mould (cm³)',type:'number',ph:'2305'},
+    {key:'compaction',label:'Compaction (layers, hammer, blows)',type:'text',ph:'5 layers, 4.5 kg, 62 blows'},
+    {key:'mouldWet',label:'Compacted soil + mould (g)',type:'number',ph:'9553'},
+    {key:'mouldMass',label:'Mass of mould (g)',type:'number',ph:'4880'},
+    {key:'massSoil',label:'Mass of compacted soil (g)',calc:true,dec:1},
+    {key:'wetDensity',label:'Wet density (kg/m³)',calc:true,dec:1},
+    {group:'Moisture content before compaction'},
+    {key:'containerNo',label:'Container no.',type:'text',ph:'JT'},
+    {key:'wetCont',label:'Wet soil + container (g)',type:'number',ph:'311.5'},
+    {key:'dryCont',label:'Dry soil + container (g)',type:'number',ph:'289.0'},
+    {key:'contMass',label:'Container mass (g)',type:'number',ph:'36.3'},
+    {key:'drySoil',label:'Mass of dry soil (g)',calc:true,dec:1},
+    {key:'water',label:'Mass of water (g)',calc:true,dec:1},
+    {key:'preMc',label:'Moisture content (%)',calc:true,dec:2},
+    {group:'Moisture content after soaking'},
+    {key:'soakContainerNo',label:'Container no.',type:'text',ph:'GRC'},
+    {key:'soakWetCont',label:'Wet soil + container (g)',type:'number',ph:'345.5'},
+    {key:'soakDryCont',label:'Dry soil + container (g)',type:'number',ph:'315.0'},
+    {key:'soakContMass',label:'Container mass (g)',type:'number',ph:'36.4'},
+    {key:'soakMc',label:'Moisture content (%)',calc:true,dec:2},
+    {group:'Density, swell and CBR'},
+    {key:'dryDensity',label:'Dry density (kg/m³)',calc:true,dec:1},
+    {key:'pctMdd',label:'Dry density (% MDD)',calc:true,dec:2},
+    {key:'initialDial',label:'Initial dial reading (mm)',type:'number',ph:'0.2'},
+    {key:'finalDial',label:'Final dial reading (mm)',type:'number',ph:'1.127'},
+    {key:'swell',label:'Swell (%)',calc:true,dec:2},
+    {key:'cbr25',label:'CBR at 2.5 mm (%)',calc:true,dec:2},
+    {key:'cbr50',label:'CBR at 5.0 mm (%)',calc:true,dec:2}
+  ];
+
+  function escapeHTML(value){
+    return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function fmt(n,d){
+    d=d===undefined?2:d;
+    if(typeof n!=='number'||!isFinite(n))return '—';
+    var s=n.toFixed(d);
+    if(/^-0(\.0*)?$/.test(s))s=s.slice(1);
+    return s;
+  }
+  function num(value){
+    var s=String(value==null?'':value).trim();
+    return s===''?NaN:Number(s);
+  }
+  function each(selector,fn){Array.prototype.forEach.call(document.querySelectorAll(selector),fn);}
+  function pointNote(p){
+    if(p==='A')return '3 layers, 2.5 kg, 62 blows';
+    if(p==='B')return '5 layers, 4.5 kg, 30 blows';
+    return '5 layers, 4.5 kg, 62 blows';
+  }
+  function defaultState(){
+    var base={
+      info:{project:'',location:'',sampleNo:'',materialSource:'',materialFrom:'',testedBy:'',checkedBy:'',verifiedBy:'',dateSampled:'',dateCompaction:'',datePenetration:'',testMethod:'CML TEST 1.10, Ref. BS 1377: Part 4: 1990',remarks:''},
+      setup:{compactionMethod:'Three Point Method',mddPercent:'100',targetMdd:'',targetOmc:'',nmc:'',soakDays:'4',provingRing:'',plungerDia:'49.65',plungerArea:'1935',sampleHeight:'127',initialMass:'6000',trendBasis:'2.5',trendA:'',trendB:''},
+      points:{},pen:{}
+    };
+    POINTS.forEach(function(p){
+      base.points[p]={mouldNo:'',volume:'2305',compaction:pointNote(p),mouldWet:'',mouldMass:'',containerNo:'',wetCont:'',dryCont:'',contMass:'',soakContainerNo:'',soakWetCont:'',soakDryCont:'',soakContMass:'',initialDial:'',finalDial:''};
+      base.pen[p]=PEN_STEPS.map(function(mm,i){return i===0?'0':'';});
+    });
+    return base;
+  }
+
+  var state=defaultState(),lastResult=null,restored=false,suppressSave=false;
+  var drawSoon=TK?TK.debounce(function(){drawAll(false);},120):function(){drawAll(false);};
+  var saveSoon=TK?TK.debounce(saveNow,600):function(){};
+
+  function saveNow(){
+    if(!TK||suppressSave)return;
+    var ok=TK.store('cbr').save(state);
+    var status=el('saveState');
+    if(status){
+      var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
+      status.textContent=ok?('Saved in this browser at '+p(d.getHours())+':'+p(d.getMinutes())+'.'):'Could not save in this browser.';
+      status.className=ok?'hint':'hint bad-text';
+    }
+  }
+
+  function restore(){
+    if(!TK)return;
+    var saved=TK.store('cbr').load(null);
+    if(!saved||typeof saved!=='object')return;
+    restored=true;
+    var base=defaultState();
+    ['info','setup'].forEach(function(group){
+      if(saved[group]&&typeof saved[group]==='object'){
+        Object.keys(base[group]).forEach(function(k){
+          var v=saved[group][k];
+          if(typeof v==='string'||typeof v==='number')base[group][k]=String(v);
+        });
+      }
+    });
+    POINTS.forEach(function(p){
+      if(saved.points&&saved.points[p]&&typeof saved.points[p]==='object'){
+        Object.keys(base.points[p]).forEach(function(k){
+          var v=saved.points[p][k];
+          if(typeof v==='string'||typeof v==='number')base.points[p][k]=String(v);
+        });
+      }
+      if(saved.pen&&Object.prototype.toString.call(saved.pen[p])==='[object Array]'){
+        for(var i=0;i<PEN_STEPS.length;i++){
+          var v=saved.pen[p][i];
+          if(typeof v==='string'||typeof v==='number')base.pen[p][i]=String(v);
+        }
+      }
+    });
+    if(base.setup.trendBasis!=='2.5'&&base.setup.trendBasis!=='5')base.setup.trendBasis='2.5';
+    state=base;
+  }
+
+  function syncFromDom(){
+    each('[data-info]',function(t){state.info[t.getAttribute('data-info')]=t.value;});
+    each('[data-setup]',function(t){state.setup[t.getAttribute('data-setup')]=t.value;});
+    each('[data-point]',function(t){
+      var p=t.getAttribute('data-point'),f=t.getAttribute('data-field');
+      if(state.points[p]&&f)state.points[p][f]=t.value;
+    });
+    each('[data-pen]',function(t){
+      var p=t.getAttribute('data-pen'),i=Number(t.getAttribute('data-i'));
+      if(state.pen[p]&&isFinite(i))state.pen[p][i]=t.value;
+    });
+    each('[data-trend]',function(t){
+      if(t.getAttribute('data-trend')==='a')state.setup.trendA=t.value;
+      else state.setup.trendB=t.value;
+    });
+  }
+
+  function syncInputs(){
+    each('[data-info]',function(t){t.value=state.info[t.getAttribute('data-info')]||'';});
+    each('[data-setup]',function(t){t.value=state.setup[t.getAttribute('data-setup')]||'';});
+    each('[data-point]',function(t){
+      var p=t.getAttribute('data-point'),f=t.getAttribute('data-field');
+      t.value=(state.points[p]&&state.points[p][f])||'';
+    });
+    each('[data-pen]',function(t){
+      var p=t.getAttribute('data-pen'),i=Number(t.getAttribute('data-i'));
+      t.value=(state.pen[p]&&state.pen[p][i])||'';
+    });
+    each('[data-trend]',function(t){
+      t.value=(t.getAttribute('data-trend')==='a'?state.setup.trendA:state.setup.trendB)||'';
+    });
+    if(el('trendBasis'))el('trendBasis').value=state.setup.trendBasis;
+    updatePenNotes();
+  }
+
+  function buildPointTable(){
+    var body=el('pointBody');
+    if(!body)return;
+    var html='';
+    POINT_ROWS.forEach(function(row){
+      if(row.group){
+        html+='<tr class="group-row"><td colspan="4">'+escapeHTML(row.group)+'</td></tr>';
+        return;
+      }
+      html+='<tr><td class="lbl">'+escapeHTML(row.label)+'</td>';
+      POINTS.forEach(function(p){
+        if(row.calc){
+          html+='<td class="num"><span class="calc-val" id="c-'+p+'-'+row.key+'">—</span></td>';
+        }else{
+          html+='<td><input type="'+row.type+'"'+(row.type==='number'?' min="0" step="any" inputmode="decimal"':'')+' data-point="'+p+'" data-field="'+row.key+'" aria-label="'+escapeHTML(row.label+' — Test '+p)+'"'+(row.ph?' placeholder="'+escapeHTML(row.ph)+'"':'')+' autocomplete="off"></td>';
+        }
+      });
+      html+='</tr>';
+    });
+    body.innerHTML=html;
+  }
+
+  function buildPenTable(){
+    var body=el('penBody');
+    if(!body)return;
+    var html='';
+    PEN_STEPS.forEach(function(mm,i){
+      html+='<tr><td class="num"><strong>'+mm.toFixed(1)+'</strong></td>';
+      POINTS.forEach(function(p){
+        html+='<td><input type="number" min="0" step="any" inputmode="decimal" data-pen="'+p+'" data-i="'+i+'" aria-label="Test '+p+' dial reading at '+mm.toFixed(1)+' mm"></td><td class="num"><span id="f-'+p+'-'+i+'">—</span></td>';
+      });
+      html+='</tr>';
+    });
+    body.innerHTML=html;
+  }
+
+  function updatePenNotes(){
+    POINTS.forEach(function(p){
+      var e=el('penNote'+p);
+      if(e)e.textContent=state.points[p].compaction||'';
+    });
+  }
+
+  function penForce(p,i,prf){
+    var v=num(state.pen[p]&&state.pen[p][i]);
+    return (isFinite(v)&&isFinite(prf)&&prf>0)?v*prf:NaN;
+  }
+
+  function calcPoint(p,targetMdd,sampleHeight,prf){
+    var d=state.points[p],out={};
+    var volume=num(d.volume),mw=num(d.mouldWet),mm=num(d.mouldMass);
+    out.massSoil=(isFinite(mw)&&isFinite(mm))?mw-mm:NaN;
+    out.wetDensity=(out.massSoil>0&&volume>0)?out.massSoil/volume*1000:NaN;
+    var wet=num(d.wetCont),dry=num(d.dryCont),tare=num(d.contMass);
+    out.drySoil=(isFinite(dry)&&isFinite(tare))?dry-tare:NaN;
+    out.water=(isFinite(wet)&&isFinite(dry))?wet-dry:NaN;
+    out.preMc=(out.drySoil>0&&out.water>=0)?out.water/out.drySoil*100:NaN;
+    var sw=num(d.soakWetCont),sd=num(d.soakDryCont),st=num(d.soakContMass);
+    var soakDry=(isFinite(sd)&&isFinite(st))?sd-st:NaN;
+    var soakWater=(isFinite(sw)&&isFinite(sd))?sw-sd:NaN;
+    out.soakMc=(soakDry>0&&soakWater>=0)?soakWater/soakDry*100:NaN;
+    out.dryDensity=(out.wetDensity>0&&isFinite(out.preMc))?out.wetDensity*100/(100+out.preMc):NaN;
+    out.pctMdd=(out.dryDensity>0&&targetMdd>0)?out.dryDensity/targetMdd*100:NaN;
+    var ini=num(d.initialDial),fin=num(d.finalDial);
+    out.swell=(isFinite(ini)&&isFinite(fin)&&sampleHeight>0)?(fin-ini)*100/sampleHeight:NaN;
+    var f25=penForce(p,5,prf),f50=penForce(p,10,prf);
+    out.force25=f25;out.force50=f50;
+    out.cbr25=isFinite(f25)?f25/13.2*100:NaN;
+    out.cbr50=isFinite(f50)?f50/20*100:NaN;
+    return out;
+  }
+
+  function fitTrend(points){
+    var pts=points.filter(function(p){
+      return p&&isFinite(p.x)&&p.x>0&&isFinite(p.y)&&p.y>=0;
+    });
+    if(pts.length<2)return null;
+    var n=pts.length,sx=0,sy=0,sxx=0,sxy=0,syy=0,lx;
+    pts.forEach(function(p){
+      lx=Math.log(p.x);sx+=lx;sy+=p.y;sxx+=lx*lx;sxy+=lx*p.y;syy+=p.y*p.y;
+    });
+    var denom=n*sxx-sx*sx;
+    if(Math.abs(denom)<1e-12)return null;
+    var a=(n*sxy-sx*sy)/denom,b=(sy-a*sx)/n;
+    if(!isFinite(a)||!isFinite(b))return null;
+    var mean=sy/n,ssTot=0,ssRes=0;
+    pts.forEach(function(p){
+      var fit=a*Math.log(p.x)+b;
+      ssTot+=(p.y-mean)*(p.y-mean);
+      ssRes+=(p.y-fit)*(p.y-fit);
+    });
+    return {a:a,b:b,r2:ssTot>1e-12?1-ssRes/ssTot:null,n:n,fit:true};
+  }
+
+  function fitLinear(points){
+    var pts=points.filter(function(p){return p&&isFinite(p.x)&&isFinite(p.y);});
+    if(pts.length<2)return null;
+    var n=pts.length,sx=0,sy=0,sxx=0,sxy=0;
+    pts.forEach(function(p){sx+=p.x;sy+=p.y;sxx+=p.x*p.x;sxy+=p.x*p.y;});
+    var denom=n*sxx-sx*sx;
+    if(Math.abs(denom)<1e-12)return null;
+    var m=(n*sxy-sx*sy)/denom,b=(sy-m*sx)/n;
+    return isFinite(m)&&isFinite(b)?{m:m,b:b}:null;
+  }
+
+  function setText(id,value,dec){
+    var e=el(id);
+    if(e)e.textContent=(typeof value==='number'&&isFinite(value))?fmt(value,dec):'—';
+  }
+  function renderPoint(p,r){
+    setText('c-'+p+'-massSoil',r.massSoil,1);
+    setText('c-'+p+'-wetDensity',r.wetDensity,1);
+    setText('c-'+p+'-drySoil',r.drySoil,1);
+    setText('c-'+p+'-water',r.water,1);
+    setText('c-'+p+'-preMc',r.preMc,2);
+    setText('c-'+p+'-soakMc',r.soakMc,2);
+    setText('c-'+p+'-dryDensity',r.dryDensity,1);
+    setText('c-'+p+'-pctMdd',r.pctMdd,2);
+    setText('c-'+p+'-swell',r.swell,2);
+    setText('c-'+p+'-cbr25',r.cbr25,2);
+    setText('c-'+p+'-cbr50',r.cbr50,2);
+    for(var i=0;i<PEN_STEPS.length;i++)setText('f-'+p+'-'+i,penForce(p,i,lastResult?lastResult.prf:NaN),3);
+  }
+
+  function renderTrend(){
+    var body=el('trendBody');
+    if(body){
+      if(!lastResult||!lastResult.rows.length){
+        body.innerHTML='<tr><td colspan="3" class="empty">Enter the target MDD to show the compaction table.</td></tr>';
+      }else{
+        body.innerHTML=lastResult.rows.map(function(row){
+          return '<tr'+(row.pct===95?' class="key-row"':'')+'><td>'+row.pct+'</td><td class="num">'+fmt(row.density,0)+'</td><td class="num">'+(isFinite(row.cbr)?fmt(row.cbr,2):'—')+'</td></tr>';
+        }).join('');
+      }
+    }
+    var eq=el('trendEq');
+    if(!eq)return;
+    var t=lastResult&&lastResult.trend;
+    if(t){
+      var sign=t.b<0?' − ':' + ';
+      var text='CBR = '+fmt(t.a,4)+' × ln(ρd)'+sign+fmt(Math.abs(t.b),4);
+      if(t.r2!==null&&t.r2!==undefined)text+='   ·   R² = '+fmt(t.r2,4);
+      text+='   ·   '+(t.fit?'Fitted from '+t.n+' tests':'Custom coefficients')+' at '+lastResult.basis+' mm.';
+      if(t.a<0)text+=' Negative slope — check the data.';
+      if(lastResult.partialTrend)text+=' Enter both a and b, or clear both for auto-fit.';
+      eq.textContent=text;
+    }else{
+      eq.textContent=lastResult&&lastResult.partialTrend?'Enter both a and b, or clear both for auto-fit.':'Enter at least two valid CBR points to fit a logarithmic trend, or enter custom coefficients a and b.';
+    }
+  }
+
+  function renderResults(){
+    var r=lastResult;
+    if(!r)return;
+    setText('cbr95',r.cbr95,2);
+    setText('density95',r.targetMdd>0?r.targetMdd*0.95:NaN,0);
+    setText('waterAdd',r.waterAdd,1);
+    var note=el('cbr95Note');
+    if(note){
+      if(r.trend)note.textContent='CBR at '+r.basis+' mm · '+(r.mode==='custom'?'custom trend':'fitted trend');
+      else note.textContent='% at 95% MDD';
+    }
+    var water=el('waterNote');
+    if(water){
+      var text='Water to add for OMC = (OMC − NMC) × initial sample mass ÷ (100 + NMC).';
+      if(isFinite(r.waterAdd))text+=' = '+fmt(r.waterAdd,1)+' ml per test';
+      water.textContent=text;
+    }
+    var msg=el('message');
+    if(!msg)return;
+    var calculated=POINTS.filter(function(p){return isFinite(r.points[p].dryDensity);}).length;
+    if(!(r.targetMdd>0))msg.textContent='Enter a valid target MDD to calculate density and CBR results.';
+    else if(!(r.prf>0))msg.textContent='Enter the proving ring factor to calculate CBR.';
+    else if(calculated===0)msg.textContent='Enter a CBR test point to begin.';
+    else if(r.trendPts.length===0)msg.textContent='Enter penetration readings at 2.5 mm and 5.0 mm to calculate CBR.';
+    else if(r.trendPts.length===1)msg.textContent=r.trendPts.length+' valid CBR point · add one more to fit the trend.';
+    else if(r.mode==='custom')msg.textContent=r.trendPts.length+' CBR points calculated · using custom trend coefficients.';
+    else if(r.mode==='fit')msg.textContent=r.trendPts.length+' CBR points calculated · trend fitted from '+r.trendPts.length+' points.';
+    else msg.textContent=r.trendPts.length+' CBR points calculated.';
+    if(r.partialTrend)msg.textContent+=' Enter both a and b, or clear both for auto-fit.';
+  }
+
+  function syncSignatures(){
+    each('[data-sign]',function(t){
+      var key=t.getAttribute('data-sign'),value='';
+      if(key==='date')value=state.info.datePenetration||state.info.dateCompaction||'';
+      else if(key==='verifiedBy')value=state.info.verifiedBy||state.info.checkedBy||'';
+      else value=state.info[key]||'';
+      t.textContent=value;
+    });
+    var out=el('remarksOut');
+    if(out)out.textContent=state.info.remarks?('Remarks: '+state.info.remarks):'';
+  }
+
+  function calc(){
+    var s=state.setup,targetMdd=num(s.targetMdd),targetOmc=num(s.targetOmc),nmc=num(s.nmc),prf=num(s.provingRing),sampleHeight=num(s.sampleHeight),initialMass=num(s.initialMass);
+    var waterAdd=(isFinite(targetOmc)&&isFinite(nmc)&&isFinite(initialMass)&&initialMass>0&&nmc>=0)?(targetOmc-nmc)*initialMass/(100+nmc):NaN;
+    var points={};
+    POINTS.forEach(function(p){
+      points[p]=calcPoint(p,targetMdd,sampleHeight,prf);
+    });
+    var basis=s.trendBasis==='5'?'5':'2.5';
+    var trendPts=POINTS.map(function(p){
+      return {x:points[p].dryDensity,y:basis==='5'?points[p].cbr50:points[p].cbr25};
+    }).filter(function(p){return isFinite(p.x)&&p.x>0&&isFinite(p.y)&&p.y>=0;});
+    var fit=fitTrend(trendPts);
+    var aRaw=String(s.trendA==null?'':s.trendA).trim(),bRaw=String(s.trendB==null?'':s.trendB).trim();
+    var partialTrend=(aRaw!==''&&bRaw==='')||(aRaw===''&&bRaw!=='');
+    var custom=(aRaw!==''&&bRaw!=='');
+    var a=num(aRaw),b=num(bRaw),trend=null,mode='none';
+    if(custom&&isFinite(a)&&isFinite(b)){
+      trend={a:a,b:b,r2:fit?fit.r2:null,n:trendPts.length,fit:false};
+      mode='custom';
+    }else if(fit){
+      trend=fit;mode='fit';
+    }
+    var rows=[];
+    if(isFinite(targetMdd)&&targetMdd>0){
+      [90,93,95,98,100].forEach(function(pct){
+        var density=targetMdd*pct/100;
+        var cbr=trend?trend.a*Math.log(density)+trend.b:NaN;
+        rows.push({pct:pct,density:density,cbr:cbr});
+      });
+    }
+    var cbr95=null;
+    rows.forEach(function(row){if(row.pct===95)cbr95=row.cbr;});
+    lastResult={points:points,trend:trend,fit:fit,mode:mode,rows:rows,cbr95:isFinite(cbr95)?cbr95:null,targetMdd:targetMdd,basis:basis,waterAdd:waterAdd,trendPts:trendPts,prf:prf,targetOmc:targetOmc,nmc:nmc,partialTrend:partialTrend};
+    POINTS.forEach(function(p){renderPoint(p,points[p]);});
+    renderTrend();
+    renderResults();
+    syncSignatures();
+    drawSoon();
+    return lastResult;
+  }
+
+  /* ---------- charts ---------- */
+  function chartBase(id,printMode){
+    var canvas=el(id);
+    if(!canvas)return null;
+    var rect=canvas.getBoundingClientRect(),W=Math.max(280,rect.width||560),H=260,dpr=printMode?1:(window.devicePixelRatio||1);
+    canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.height=H+'px';
+    var ctx=canvas.getContext('2d');
+    if(!ctx)return null;
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    function cv(name,d){
+      try{
+        var value=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return value||d;
+      }catch(e){return d;}
+    }
+    var p={
+      muted:printMode?'#333':cv('--muted','#888'),
+      grid:printMode?'#d9d9d9':cv('--line-soft','#ccc'),
+      axis:printMode?'#666':cv('--line','#999'),
+      ink:printMode?'#000':cv('--text','#000'),
+      panel:printMode?'#fff':cv('--panel','#fff'),
+      orange:printMode?'#ef6c00':cv('--orange','#f70'),
+      green:printMode?'#2e7d32':cv('--green','#4a4'),
+      blue:'#1565c0',
+      red:printMode?'#b00020':'#dc2626'
+    };
+    return {ctx:ctx,W:W,H:H,p:p};
+  }
+
+  function chartAxes(base,opt){
+    var ctx=base.ctx,W=base.W,H=base.H,p=base.p;
+    var L=58,R=16,T=24,B=44;
+    var x0=opt.x0,x1=opt.x1,y0=opt.y0,y1=opt.y1;
+    if(!(x1>x0))x1=x0+1;
+    if(!(y1>y0))y1=y0+1;
+    function X(v){return L+(v-x0)/(x1-x0)*(W-L-R);}
+    function Y(v){return H-B-(v-y0)/(y1-y0)*(H-T-B);}
+    ctx.font='11px IBM Plex Sans, sans-serif';ctx.fillStyle=p.muted;ctx.textBaseline='alphabetic';
+    ctx.lineWidth=1;ctx.strokeStyle=p.grid;
+    for(var i=0;i<=4;i++){
+      var yv=y0+(y1-y0)*i/4,y=Y(yv);
+      ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(opt.yFmt(yv),L-6,y+4);
+    }
+    for(i=0;i<=5;i++){
+      var xv=x0+(x1-x0)*i/5,x=X(xv);
+      ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-B);ctx.stroke();
+      ctx.textAlign='center';ctx.fillText(opt.xFmt(xv),x,H-B+15);
+    }
+    ctx.strokeStyle=p.axis;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,H-B);ctx.lineTo(W-R,H-B);ctx.stroke();
+    ctx.fillStyle=p.muted;ctx.textAlign='center';ctx.fillText(opt.xLabel,(L+W-R)/2,H-5);
+    ctx.save();ctx.translate(13,(T+H-B)/2);ctx.rotate(-Math.PI/2);ctx.fillText(opt.yLabel,0,0);ctx.restore();
+    return {X:X,Y:Y,W:W,H:H,L:L,R:R,T:T,B:B};
+  }
+
+  function noChartData(ctx,msg){
+    ctx.fillStyle='#888';ctx.font='12px IBM Plex Sans, sans-serif';ctx.textAlign='left';ctx.fillText(msg,18,40);
+  }
+
+  function drawPenChart(printMode){
+    var base=chartBase('penChart',printMode);if(!base)return;
+    var r=lastResult,prf=r?r.prf:NaN;
+    var series=POINTS.map(function(p){
+      var pts=[];
+      PEN_STEPS.forEach(function(mm,i){
+        var f=penForce(p,i,prf);
+        if(isFinite(f))pts.push({x:mm,y:f});
+      });
+      return {p:p,pts:pts};
+    }).filter(function(s){return s.pts.length>0;});
+    if(!series.length){noChartData(base.ctx,'Enter penetration readings to display the force curves.');return;}
+    var maxF=0;
+    series.forEach(function(s){s.pts.forEach(function(pt){if(pt.y>maxF)maxF=pt.y;});});
+    var ax=chartAxes(base,{x0:0,x1:7.5,y0:0,y1:Math.max(1,maxF*1.12),xLabel:'Penetration (mm)',yLabel:'Force (kN)',xFmt:function(v){return v.toFixed(1);},yFmt:function(v){return fmt(v,2);}});
+    var ctx=base.ctx,p=base.p;
+    [2.5,5].forEach(function(xv){
+      ctx.setLineDash([4,4]);ctx.strokeStyle=p.axis;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(ax.X(xv),ax.T);ctx.lineTo(ax.X(xv),ax.H-ax.B);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=p.muted;ctx.textAlign='center';ctx.fillText(xv.toFixed(1),ax.X(xv),ax.T+12);
+    });
+    var colors=[p.orange,p.green,p.blue];
+    series.forEach(function(s,idx){
+      var color=colors[idx%colors.length];
+      ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();
+      s.pts.forEach(function(pt,i){if(i===0)ctx.moveTo(ax.X(pt.x),ax.Y(pt.y));else ctx.lineTo(ax.X(pt.x),ax.Y(pt.y));});
+      ctx.stroke();
+      s.pts.forEach(function(pt){
+        ctx.beginPath();ctx.arc(ax.X(pt.x),ax.Y(pt.y),3.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1;ctx.strokeStyle=p.panel;ctx.stroke();
+      });
+      ctx.fillStyle=color;ctx.textAlign='left';ctx.font='600 11px IBM Plex Sans, sans-serif';ctx.fillText('Test '+s.p,ax.L+8+idx*52,ax.T+12);
+    });
+  }
+
+  function drawCbrDensityChart(printMode){
+    var base=chartBase('cbrDensityChart',printMode);if(!base)return;
+    var r=lastResult;if(!r){noChartData(base.ctx,'Enter test data to display the chart.');return;}
+    var pts=POINTS.map(function(p){return {x:r.points[p].dryDensity,y:r.basis==='5'?r.points[p].cbr50:r.points[p].cbr25};}).filter(function(pt){return isFinite(pt.x)&&pt.x>0&&isFinite(pt.y)&&pt.y>=0;});
+    var xs=pts.map(function(pt){return pt.x;});
+    if(r.targetMdd>0){xs.push(r.targetMdd*0.9);xs.push(r.targetMdd);}
+    if(!xs.length){noChartData(base.ctx,'Enter dry density and CBR readings to display this chart.');return;}
+    var xmin=Math.min.apply(null,xs),xmax=Math.max.apply(null,xs),pad=(xmax-xmin)*0.06||10;
+    xmin=Math.max(0,xmin-pad);xmax=xmax+pad;
+    var ys=pts.map(function(pt){return pt.y;}),maxY=ys.length?Math.max.apply(null,ys):0;
+    if(r.trend){
+      for(var k=0;k<=30;k++){
+        var xv=xmin+(xmax-xmin)*k/30,yv=r.trend.a*Math.log(xv)+r.trend.b;
+        if(isFinite(yv)&&yv>maxY)maxY=yv;
+      }
+    }
+    var ymax=Math.max(1,maxY*1.1);
+    var ax=chartAxes(base,{x0:xmin,x1:xmax,y0:0,y1:ymax,xLabel:'Dry density (kg/m³)',yLabel:'CBR (%)',xFmt:function(v){return v.toFixed(0);},yFmt:function(v){return fmt(v,1);}});
+    var ctx=base.ctx,p=base.p;
+    if(r.targetMdd>0){
+      var x95=r.targetMdd*0.95;
+      ctx.setLineDash([4,4]);ctx.strokeStyle=p.axis;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(ax.X(x95),ax.T);ctx.lineTo(ax.X(x95),ax.H-ax.B);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=p.muted;ctx.textAlign='center';ctx.fillText('95% MDD',ax.X(x95),ax.T+12);
+    }
+    if(r.trend){
+      ctx.strokeStyle=p.green;ctx.lineWidth=2;ctx.beginPath();
+      var started=false;
+      for(var i=0;i<=80;i++){
+        var x=xmin+(xmax-xmin)*i/80,y=r.trend.a*Math.log(x)+r.trend.b;
+        if(!isFinite(y))continue;
+        if(!started){ctx.moveTo(ax.X(x),ax.Y(y));started=true;}else ctx.lineTo(ax.X(x),ax.Y(y));
+      }
+      ctx.stroke();
+    }
+    pts.forEach(function(pt){
+      ctx.beginPath();ctx.arc(ax.X(pt.x),ax.Y(pt.y),5,0,Math.PI*2);ctx.fillStyle=p.orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=p.panel;ctx.stroke();
+    });
+    ctx.fillStyle=p.muted;ctx.textAlign='left';ctx.font='11px IBM Plex Sans, sans-serif';ctx.fillText('Measured CBR at '+r.basis+' mm',ax.L+8,ax.T+12);
+    if(r.trend){ctx.fillStyle=p.green;ctx.fillText('Logarithmic trend',ax.L+8,ax.T+26);}
+  }
+
+  function drawCbrCompactionChart(printMode){
+    var base=chartBase('cbrCompactionChart',printMode);if(!base)return;
+    var r=lastResult;if(!r){noChartData(base.ctx,'Enter test data to display the chart.');return;}
+    var pts=POINTS.map(function(p){return {x:r.points[p].pctMdd,y:r.basis==='5'?r.points[p].cbr50:r.points[p].cbr25};}).filter(function(pt){return isFinite(pt.x)&&isFinite(pt.y)&&pt.y>=0;});
+    var xs=pts.map(function(pt){return pt.x;});
+    if(r.targetMdd>0){xs.push(90);xs.push(100);}
+    if(!xs.length){noChartData(base.ctx,'Enter dry density and CBR readings to display this chart.');return;}
+    var xmin=Math.min.apply(null,xs),xmax=Math.max.apply(null,xs),pad=(xmax-xmin)*0.06||2;
+    xmin=Math.max(0,xmin-pad);xmax=xmax+pad;
+    var ys=pts.map(function(pt){return pt.y;}),maxY=ys.length?Math.max.apply(null,ys):0;
+    if(r.trend&&r.targetMdd>0){
+      for(var k=0;k<=30;k++){
+        var pct=xmin+(xmax-xmin)*k/30,density=r.targetMdd*pct/100,yv=r.trend.a*Math.log(density)+r.trend.b;
+        if(isFinite(yv)&&yv>maxY)maxY=yv;
+      }
+    }
+    var ymax=Math.max(1,maxY*1.1);
+    var ax=chartAxes(base,{x0:xmin,x1:xmax,y0:0,y1:ymax,xLabel:'Compaction (% MDD)',yLabel:'CBR (%)',xFmt:function(v){return v.toFixed(0);},yFmt:function(v){return fmt(v,1);}});
+    var ctx=base.ctx,p=base.p;
+    if(r.targetMdd>0){
+      ctx.setLineDash([4,4]);ctx.strokeStyle=p.axis;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(ax.X(95),ax.T);ctx.lineTo(ax.X(95),ax.H-ax.B);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=p.muted;ctx.textAlign='center';ctx.fillText('95% MDD',ax.X(95),ax.T+12);
+    }
+    if(r.trend&&r.targetMdd>0){
+      ctx.strokeStyle=p.green;ctx.lineWidth=2;ctx.beginPath();
+      var started=false;
+      for(var i=0;i<=80;i++){
+        var pc=xmin+(xmax-xmin)*i/80,d=r.targetMdd*pc/100,y=r.trend.a*Math.log(d)+r.trend.b;
+        if(!isFinite(y))continue;
+        if(!started){ctx.moveTo(ax.X(pc),ax.Y(y));started=true;}else ctx.lineTo(ax.X(pc),ax.Y(y));
+      }
+      ctx.stroke();
+    }
+    pts.forEach(function(pt){
+      ctx.beginPath();ctx.arc(ax.X(pt.x),ax.Y(pt.y),5,0,Math.PI*2);ctx.fillStyle=p.orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=p.panel;ctx.stroke();
+    });
+    ctx.fillStyle=p.muted;ctx.textAlign='left';ctx.font='11px IBM Plex Sans, sans-serif';ctx.fillText('Measured CBR at '+r.basis+' mm',ax.L+8,ax.T+12);
+    if(r.trend){ctx.fillStyle=p.green;ctx.fillText('Logarithmic trend',ax.L+8,ax.T+26);}
+  }
+
+  function drawSwellChart(printMode){
+    var base=chartBase('swellChart',printMode);if(!base)return;
+    var r=lastResult;if(!r){noChartData(base.ctx,'Enter test data to display the chart.');return;}
+    var pts=POINTS.map(function(p){return {x:r.points[p].pctMdd,y:r.points[p].swell};}).filter(function(pt){return isFinite(pt.x)&&isFinite(pt.y);});
+    var xs=pts.map(function(pt){return pt.x;});
+    if(r.targetMdd>0){xs.push(90);xs.push(100);}
+    if(!xs.length){noChartData(base.ctx,'Enter swell readings to display this chart.');return;}
+    var xmin=Math.min.apply(null,xs),xmax=Math.max.apply(null,xs),pad=(xmax-xmin)*0.06||2;
+    xmin=Math.max(0,xmin-pad);xmax=xmax+pad;
+    var ys=pts.map(function(pt){return pt.y;});
+    var ymin=Math.min.apply(null,ys.concat([0])),ymax=Math.max.apply(null,ys.concat([0.1]));
+    var ypad=(ymax-ymin)*0.15||0.1;
+    var ax=chartAxes(base,{x0:xmin,x1:xmax,y0:ymin-ypad,y1:ymax+ypad,xLabel:'Compaction (% MDD)',yLabel:'Swell (%)',xFmt:function(v){return v.toFixed(0);},yFmt:function(v){return fmt(v,2);}});
+    var ctx=base.ctx,p=base.p;
+    if(r.targetMdd>0){
+      ctx.setLineDash([4,4]);ctx.strokeStyle=p.axis;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(ax.X(95),ax.T);ctx.lineTo(ax.X(95),ax.H-ax.B);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=p.muted;ctx.textAlign='center';ctx.fillText('95% MDD',ax.X(95),ax.T+12);
+    }
+    var line=fitLinear(pts);
+    if(line){
+      ctx.strokeStyle=p.green;ctx.lineWidth=2;ctx.beginPath();
+      var lx0=xmin,lx1=xmax,ly0=line.m*lx0+line.b,ly1=line.m*lx1+line.b;
+      ctx.moveTo(ax.X(lx0),ax.Y(ly0));ctx.lineTo(ax.X(lx1),ax.Y(ly1));ctx.stroke();
+    }
+    pts.forEach(function(pt){
+      ctx.beginPath();ctx.arc(ax.X(pt.x),ax.Y(pt.y),5,0,Math.PI*2);ctx.fillStyle=p.orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=p.panel;ctx.stroke();
+    });
+    ctx.fillStyle=p.muted;ctx.textAlign='left';ctx.font='11px IBM Plex Sans, sans-serif';ctx.fillText('Measured swell',ax.L+8,ax.T+12);
+  }
+
+  function drawAll(printMode){
+    if(!lastResult)return;
+    drawPenChart(printMode);
+    drawCbrDensityChart(printMode);
+    drawCbrCompactionChart(printMode);
+    drawSwellChart(printMode);
+  }
+
+  /* ---------- print + CSV ---------- */
+  function printSheet(){
+    syncFromDom();
+    var r=calc();
+    var valid=POINTS.some(function(p){return isFinite(r.points[p].cbr25)||isFinite(r.points[p].cbr50);});
+    if(!(r.targetMdd>0)||!valid){
+      el('message').textContent='Enter the target MDD, proving ring factor and CBR readings before printing the report.';
+      return;
+    }
+    var info=state.info,meta=[];
+    if(info.project)meta.push('Project: '+info.project);
+    if(info.location)meta.push('Location: '+info.location);
+    if(info.materialSource)meta.push('Material source: '+info.materialSource);
+    if(info.materialFrom)meta.push('Material from: '+info.materialFrom);
+    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
+    if(info.dateSampled)meta.push('Date sampled: '+info.dateSampled);
+    if(info.dateCompaction)meta.push('Date compacted: '+info.dateCompaction);
+    if(info.datePenetration)meta.push('Date penetrated: '+info.datePenetration);
+    if(state.info.testMethod)meta.push('Test method: '+info.testMethod);
+    if(state.setup.compactionMethod)meta.push('Compaction method: '+state.setup.compactionMethod);
+    if(isFinite(r.targetMdd))meta.push('Target MDD: '+fmt(r.targetMdd,0)+' kg/m³');
+    if(isFinite(r.targetOmc))meta.push('Target OMC: '+fmt(r.targetOmc,2)+' %');
+    if(isFinite(r.nmc))meta.push('NMC: '+fmt(r.nmc,2)+' %');
+    if(isFinite(r.prf))meta.push('Proving ring factor: '+fmt(r.prf,4)+' kN/division');
+    if(isFinite(r.waterAdd))meta.push('Water to add: '+fmt(r.waterAdd,1)+' ml per test');
+    if(r.cbr95!==null)meta.push('CBR at 95% MDD: '+fmt(r.cbr95,2)+' %');
+    if(info.remarks)meta.push('Remarks: '+info.remarks);
+    var title='California Bearing Ratio (CBR)'+(info.sampleNo?' — '+info.sampleNo:'');
+    drawAll(true);
+    if(TK){TK.printReport({title:title,meta:meta});}
+    else{window.print();}
+    drawAll(false);
+  }
+
+  function cellValue(p,row){
+    if(row.calc){
+      var r=lastResult&&lastResult.points[p];
+      return r&&isFinite(r[row.key])?fmt(r[row.key],row.dec):'';
+    }
+    return state.points[p][row.key]||'';
+  }
+
+  function exportCsv(){
+    syncFromDom();
+    var r=calc(),rows=[['California Bearing Ratio (CBR)'],['Project',state.info.project],['Location',state.info.location],['Material source',state.info.materialSource],['Material from',state.info.materialFrom],['Sample number',state.info.sampleNo],['Date sampled',state.info.dateSampled],['Date compaction',state.info.dateCompaction],['Date penetration',state.info.datePenetration],['Tested by',state.info.testedBy],['Checked by',state.info.checkedBy],['Verified by',state.info.verifiedBy],['Test method',state.info.testMethod],['Remarks',state.info.remarks],['Compaction method',state.setup.compactionMethod],['Target MDD (kg/m3)',state.setup.targetMdd],['Target OMC (%)',state.setup.targetOmc],['NMC (%)',state.setup.nmc],['Soaking days',state.setup.soakDays],['Proving ring factor (kN/division)',state.setup.provingRing],['Plunger diameter (mm)',state.setup.plungerDia],['Plunger area (mm2)',state.setup.plungerArea],['Sample height (mm)',state.setup.sampleHeight],['Initial sample mass (g)',state.setup.initialMass],['Water to add (ml per test)',isFinite(r.waterAdd)?fmt(r.waterAdd,1):''],[]];
+    rows.push(['Test summary','Test A','Test B','Test C']);
+    POINT_ROWS.forEach(function(row){
+      if(row.group)return;
+      rows.push([row.label,cellValue('A',row),cellValue('B',row),cellValue('C',row)]);
+    });
+    rows.push([]);
+    rows.push(['Penetration (mm)','A dial','A force (kN)','B dial','B force (kN)','C dial','C force (kN)']);
+    PEN_STEPS.forEach(function(mm,i){
+      var row=[mm.toFixed(1)];
+      POINTS.forEach(function(p){
+        row.push(state.pen[p][i]||'');
+        row.push(isFinite(penForce(p,i,r.prf))?fmt(penForce(p,i,r.prf),3):'');
+      });
+      rows.push(row);
+    });
+    rows.push([]);
+    rows.push(['Trend basis','CBR at '+r.basis+' mm']);
+    rows.push(['Coefficient a',r.trend?fmt(r.trend.a,4):'']);
+    rows.push(['Coefficient b',r.trend?fmt(r.trend.b,4):'']);
+    rows.push(['R squared',r.trend&&r.trend.r2!==null?fmt(r.trend.r2,4):'']);
+    rows.push(['CBR at 95% MDD (%)',r.cbr95!==null?fmt(r.cbr95,2):'']);
+    rows.push([]);
+    rows.push(['Compaction (% MDD)','Dry density (kg/m3)','CBR (%)']);
+    r.rows.forEach(function(row){rows.push([row.pct,fmt(row.density,0),isFinite(row.cbr)?fmt(row.cbr,2):'']);});
+    if(TK){TK.exportCSV('cbr-'+TK.fileStamp()+'.csv',rows);}
+    else{el('message').textContent='CSV export is not available in this browser.';}
+  }
+
+  /* ---------- reset + events ---------- */
+  function resetAll(){
+    if(!confirm('Clear all CBR test information, readings and charts? This cannot be undone.'))return;
+    suppressSave=true;
+    state=defaultState();
+    syncInputs();
+    lastResult=null;
+    calc();
+    if(TK)TK.store('cbr').clear();
+    var msg=el('message');
+    if(msg)msg.textContent='CBR sheet cleared.';
+    var status=el('saveState');
+    if(status){status.textContent='Saved data cleared from this browser.';status.className='hint';}
+    setTimeout(function(){suppressSave=false;},800);
+  }
+
+  function onInput(event){
+    var t=event.target;
+    if(!t||!t.getAttribute||t.tagName==='SELECT')return;
+    if(t.getAttribute('data-info')){state.info[t.getAttribute('data-info')]=t.value;syncSignatures();saveSoon();return;}
+    if(t.getAttribute('data-setup')){state.setup[t.getAttribute('data-setup')]=t.value;calc();saveSoon();return;}
+    if(t.getAttribute('data-point')){state.points[t.getAttribute('data-point')][t.getAttribute('data-field')]=t.value;calc();saveSoon();return;}
+    if(t.getAttribute('data-pen')){state.pen[t.getAttribute('data-pen')][Number(t.getAttribute('data-i'))]=t.value;calc();saveSoon();return;}
+    if(t.getAttribute('data-trend')){state.setup[t.getAttribute('data-trend')==='a'?'trendA':'trendB']=t.value;calc();saveSoon();return;}
+  }
+
+  function onChange(event){
+    var t=event.target;
+    if(!t||t.id!=='trendBasis')return;
+    state.setup.trendBasis=t.value;
+    calc();
+    saveSoon();
+  }
+
+  function init(){
+    buildPointTable();
+    buildPenTable();
+    restore();
+    syncInputs();
+    calc();
+    if(restored&&el('message'))el('message').textContent='Restored saved CBR sheet. '+el('message').textContent;
+    drawAll(false);
+    document.addEventListener('input',onInput);
+    document.addEventListener('change',onChange);
+    document.addEventListener('themechange',function(){drawAll(false);});
+    window.addEventListener('afterprint',function(){drawAll(false);});
+    window.addEventListener('resize',TK?TK.debounce(function(){drawAll(false);},180):function(){drawAll(false);});
+    window.addEventListener('beforeunload',function(){syncFromDom();saveNow();});
+    if(el('btnPrint'))el('btnPrint').addEventListener('click',printSheet);
+    if(el('btnCsv'))el('btnCsv').addEventListener('click',exportCsv);
+    if(el('btnReset'))el('btnReset').addEventListener('click',resetAll);
+    if(el('fitTrend'))el('fitTrend').addEventListener('click',function(){
+      syncFromDom();
+      var r=calc();
+      if(!r.fit){el('message').textContent='Add at least two valid CBR points before fitting the trend.';return;}
+      state.setup.trendA=r.fit.a.toFixed(6);
+      state.setup.trendB=r.fit.b.toFixed(6);
+      syncInputs();
+      calc();
+      saveSoon();
+      el('message').textContent='Trend coefficients fitted from the current CBR points.';
+    });
+    if(el('autoTrend'))el('autoTrend').addEventListener('click',function(){
+      state.setup.trendA='';
+      state.setup.trendB='';
+      syncInputs();
+      calc();
+      saveSoon();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

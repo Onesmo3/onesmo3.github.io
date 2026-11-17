@@ -72,9 +72,9 @@ An Android live-TV player application that uses playlist sources to access avail
 Practical civil engineering laboratory calculators and quality-control utilities for field and laboratory work.
 
 - Category: Engineering & Quality Control
-- Status: Live — 3 tools available, more planned
+- Status: Live — 4 tools available, more planned
 - [Open Civil Lab Tools](https://onesmo3.github.io/civil-lab-tools.html)
-- Available now: moisture content, MDD & OMC compaction, and sieve analysis (grading, GM & GC)
+- Available now: moisture content, MDD & OMC compaction, sieve analysis (grading, GM & GC), and CBR (soaked swell, CBR at 2.5 mm and 5.0 mm, and CBR at 95% MDD)
 - Each calculator includes a printable report, CSV export, and saves its working data in the browser.
 
 ---
@@ -98,7 +98,7 @@ Practical civil engineering laboratory calculators and quality-control utilities
 | HTML5 | Website structure |
 | CSS3 | Styling and responsive layout |
 | JavaScript | Theme switching and interactions |
-| Canvas API | Grading and compaction curves |
+| Canvas API | Grading, compaction and CBR curves |
 | Browser localStorage | Saving lab sheets on the device |
 | GitHub | Source-code hosting |
 | GitHub Pages | Website deployment |
@@ -122,7 +122,8 @@ onesmo3.github.io/
 ├── tools/
 │   ├── moisture-content.html
 │   ├── mdd-omc.html
-│   └── sieve-analysis.html
+│   ├── sieve-analysis.html
+│   └── cbr.html
 │
 └── icons/
     ├── mbisecad-mark.png
