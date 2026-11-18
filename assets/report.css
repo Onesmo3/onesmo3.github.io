@@ -111,6 +111,7 @@
     break-inside:avoid;
     page-break-inside:avoid;
   }
+  .rpt-sign--4{grid-template-columns:repeat(4,1fr)}
   .rpt-sign>div{text-align:center}
   .rpt-sign .role{font-weight:700;font-size:7.2pt}
   .rpt-sign .line{border-bottom:1px dotted #000;height:5mm;margin:1mm 0}

@@ -72,7 +72,7 @@ An Android live-TV player application that uses playlist sources to access avail
 Practical civil engineering laboratory calculators and quality-control utilities for field and laboratory work.
 
 - Category: Engineering & Quality Control
-- Status: Live — 5 tools available, more planned
+- Status: Live — 6 tools available, more planned
 - [Open Civil Lab Tools](https://onesmo3.github.io/civil-lab-tools.html)
 - Available now: moisture content, MDD & OMC compaction, sieve analysis (grading, GM & GC), CBR (soaked swell, CBR at 2.5 mm and 5.0 mm, and CBR at 95% MDD), and Atterberg limits (cone-penetration liquid limit, plastic limit, plasticity index, linear shrinkage and shrinkage product)
 - Each calculator includes a printable report, CSV export, and saves its working data in the browser.
