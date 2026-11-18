@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="../assets/report.css">
 <style>
   :root{--bad:#ff6b6b;--limit:#6cb6ff}
   [data-theme="light"]{--bad:#c62828;--limit:#1f6fb2}
@@ -71,16 +72,22 @@
         <div class="field full"><label for="i-consultant">Consultant / client</label><input id="i-consultant" type="text" data-info="consultant" placeholder="Optional"></div>
         <div class="field"><label for="i-source">Source of material</label><input id="i-source" type="text" data-info="source" placeholder="e.g. Izima B/pit"></div>
         <div class="field"><label for="i-sampleNo">Sample number</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 313"></div>
-        <div class="field"><label for="i-sampledFrom">Sampled from</label><input id="i-sampledFrom" type="text" data-info="sampledFrom" placeholder="e.g. Km 0+075, LHS"></div>
+        <div class="field"><label for="i-sampledFrom">Location / sampled from</label><input id="i-sampledFrom" type="text" data-info="sampledFrom" placeholder="e.g. Km 345 borrow pit"></div>
+        <div class="field"><label for="i-materialFor">Materials for</label><input id="i-materialFor" type="text" data-info="materialFor" placeholder="e.g. Quality control"></div>
         <div class="field"><label for="i-testedBy">Tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
         <div class="field full"><label for="i-description">Sample description</label><input id="i-description" type="text" data-info="description" placeholder="e.g. Natural gravel"></div>
         <div class="field"><label for="i-purpose">Purpose / objective</label><input id="i-purpose" type="text" data-info="purpose" placeholder="e.g. Borrow pit"></div>
-        <div class="field"><label for="i-checkedBy">Checked / verified by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-verifiedBy">Verified by (optional)</label><input id="i-verifiedBy" type="text" data-info="verifiedBy" placeholder="Name"></div>
         <div class="field"><label for="i-dateSampled">Date of sampling</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
         <div class="field"><label for="i-dateTested">Date of testing</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
-        <div class="field full"><label for="i-method">Test method</label><input id="i-method" type="text" data-info="method" placeholder="e.g. CML Test 1.7, Ref: BS 1377: Part 2: 1990"></div>
+        <div class="field full"><label for="i-method">Test method</label><input id="i-method" type="text" data-info="method" placeholder="e.g. ASTM 422-63"></div>
+        <div class="field full sample-override"><label for="sampleOverride"><input id="sampleOverride" type="checkbox" data-sample-override> Override NMC sample details (edit the shared fields manually)</label></div>
+        <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
       </div>
     </div>
+
+    <div id="logoSetup"></div>
 
     <div class="tool stack" id="formCard">
       <h3>2. Test form and sample masses</h3>
@@ -171,6 +178,8 @@
   </section>
 </main>
 
+<div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
 <footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
 
 <script src="../assets/shared.js"></script>
@@ -218,13 +227,30 @@
 
   function defaultState(){
     return {
-      info:{project:'',consultant:'',source:'',sampleNo:'',sampledFrom:'',testedBy:'',checkedBy:'',description:'',purpose:'',dateSampled:'',dateTested:'',method:'CML Test 1.7, Ref: BS 1377: Part 2: 1990'},
+      info:{project:'',consultant:'',source:'',sampleNo:'',sampledFrom:'',materialFor:'',testedBy:'',checkedBy:'',verifiedBy:'',description:'',purpose:'',dateSampled:'',dateTested:'',method:'ASTM 422-63'},
       form:'A',
       masses:{m1:'',m2:'',m3:'',m4:'',mf:''},
       retained:{A:{},B:{}}
     };
   }
   var state=defaultState();
+  var SAMPLE_MAP={project:'project',location:'sampledFrom',materialFor:'materialFor',materialFrom:'source',dateSampled:'dateSampled'};
+  var esc=function(v){return (TK?TK.escapeHTML:escapeAttr)(v)};
+
+  function applyLinkedSample(){
+    if(!TK)return;
+    var linked=state.info.sampleOverride!=='1';
+    var result=linked?TK.linkSample(state.info,state.info.sampleNo,SAMPLE_MAP):{record:null,linked:false};
+    var note=el('sampleNote');
+    if(note)note.textContent=result.linked&&result.record
+      ? 'Shared sample details filled from NMC sample '+state.info.sampleNo+'. Uncheck override to re-link.'
+      : (state.info.sampleOverride==='1'?'Local override active — shared fields are editable.':'');
+    if(el('sampleOverride'))el('sampleOverride').checked=state.info.sampleOverride==='1';
+    ['project','sampledFrom','materialFor','source','dateSampled'].forEach(function(k){
+      var input=document.querySelector('[data-info="'+k+'"]');
+      if(input)input.readOnly=result.linked&&!!result.record;
+    });
+  }
 
   function restore(){
     if(!TK)return;
@@ -674,25 +700,111 @@
   }
 
   /* ---------- print + CSV ---------- */
+  function signBlock(){
+    var info=state.info,d=function(v){return TK?TK.dateDisplay(v):v};
+    var roles=[
+      ['Prepared by:',info.testedBy,'Assistant Materials Technician',d(info.dateTested)],
+      ['Checked by:',info.checkedBy,"Consultant's Materials Technician",d(info.dateTested)],
+      ['Verified by:',info.verifiedBy||info.checkedBy,"Consultant's Materials Engineer",d(info.dateTested)]
+    ];
+    return '<div class=\"rpt-sign\">'+roles.map(function(x){
+      return '<div><div class=\"role\">'+x[0]+'</div><div class=\"line\">'+(x[3]?' '+esc(x[3]):'')+'</div><div>'+esc(x[1]||'')+'</div><div class=\"line\"></div><div class=\"title\">'+x[2]+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  function reportData(){
+    var m1=Number(state.masses.m1),m2=Number(state.masses.m2),mf=Number(state.masses.mf||0);
+    if(!isFinite(mf))mf=0;
+    var sizes=FORMS.B.fine.slice();
+    var retained=sizes.map(function(s){var v=Number(state.retained.B[String(s)]||0);return isFinite(v)&&v>=0?v:0});
+    var cum=0,cp=[],pr=[],cr=[];
+    retained.forEach(function(v){
+      var p=m1>0?v/m1*100:NaN;
+      cum+=p;pr.push(p);cr.push(cum);cp.push(100-cum);
+    });
+    function indexOfSize(size){return sizes.indexOf(size)}
+    function passAt(size){var i=indexOfSize(size);return i<0?NaN:cp[i]}
+    function dValue(target){
+      for(var i=0;i<sizes.length-1;i++){
+        if(cp[i]>=target&&cp[i+1]<target){
+          var t=(target-cp[i])/(cp[i+1]-cp[i]);
+          return Math.pow(10,Math.log10(sizes[i])+t*(Math.log10(sizes[i+1])-Math.log10(sizes[i])));
+        }
+      }
+      return NaN;
+    }
+    var gravel=100-passAt(4.75),sand=passAt(4.75)-passAt(0.075),fines=passAt(0.075);
+    var d10=dValue(10),d30=dValue(30),d60=dValue(60);
+    return {m1:m1,m2:m2,mf:mf,sizes:sizes,retained:retained,pr:pr,cr:cr,cp:cp,
+      gravel:gravel,sand:sand,fines:fines,d10:d10,d30:d30,d60:d60,
+      cu:d60/d10,cc:(d30*d30)/(d60*d10)};
+  }
+
+  function buildReport(){
+    var info=state.info,d=reportData();
+    var dd=function(v){return TK?TK.dateDisplay(v):v};
+    var val=function(v){return esc(v==null?'':v)};
+    var cell=function(v,dec){return (typeof v==='number'&&isFinite(v))?fmt(v,dec):''};
+    var h=TK?TK.logoBand():'<div class=\"rpt-logos\"></div>';
+    h+='<div class=\"rpt-title\">PROJECT:  '+val(info.project)+'\n<span class=\"main\">Particles - Size   Analysis of Soil</span></div>';
+    if(info.consultant)h+='<div class=\"rpt-sub\">'+val(info.consultant)+'</div>';
+    h+='<table class=\"rpt rpt-kv\"><tbody>'+
+      '<tr><td class=\"lbl\">LOCATION:</td><td class=\"val\">'+val(info.sampledFrom)+'</td><td class=\"lbl2\">DATE SAMPLED:</td><td class=\"val2\">'+val(dd(info.dateSampled))+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIALS FOR</td><td class=\"val\">'+val(info.materialFor)+'</td><td class=\"lbl2\">DATE TESTED:</td><td class=\"val2\">'+val(dd(info.dateTested))+'</td></tr>'+
+      '<tr><td class=\"lbl\">SAMPLE NO</td><td class=\"val\">'+val(info.sampleNo)+'</td><td class=\"lbl2\">TESTED BY</td><td class=\"val2\">'+val(info.testedBy)+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIAL FROM</td><td class=\"val\">'+val(info.source)+'</td><td class=\"lbl2\">CHECKED BY</td><td class=\"val2\">'+val(info.checkedBy)+'</td></tr>'+
+      '</tbody></table>';
+    if(state.form!=='B')h+='<p class=\"rpt-note\">Railway GR report — select Form B and enter its masses to fill the report values.</p>';
+    h+='<table class=\"rpt rpt-tight\"><tbody>'+
+      '<tr><td class=\"lbl\">TEST METHOD</td><td>'+val(info.method||'ASTM 422-63')+'</td></tr>'+
+      '<tr><td class=\"lbl\">Initial Dry Mass m1</td><td>'+cell(d.m1,2)+' g</td></tr>'+
+      '<tr><td class=\"lbl\">mass after wash m2</td><td>'+cell(d.m2,2)+' g</td></tr>'+
+      '</tbody></table>';
+
+    h+='<table class=\"rpt rpt-mini\"><thead><tr><th class=\"lbl\">Sieve Size</th><th>Mass retained (g)<br>Actual</th><th>Percentage retained<br>(m/m1)*100</th><th>Cumulative<br>percentage Retain %</th><th>Cumulative<br>percentage passing%</th><th>Spec<br>requirement</th></tr></thead><tbody>';
+    d.sizes.forEach(function(size,i){
+      var L=RAIL[String(size)],spec=(L&&L[0]!==null)?(L[0]+'-'+L[1]):'';
+      h+='<tr><td class=\"lbl\">'+sieveLabel(size)+' mm</td><td class=\"right\">'+cell(d.retained[i],2)+'</td>'+
+        '<td class=\"right\">'+cell(d.pr[i],2)+'</td><td class=\"right\">'+cell(d.cr[i],2)+'</td>'+
+        '<td class=\"right\">'+cell(d.cp[i],2)+'</td><td class=\"center\">'+val(spec)+'</td></tr>';
+    });
+    h+='<tr><td class=\"lbl\">Passing 0.075 mm</td><td class=\"right\">'+cell((d.m1-d.m2)+d.mf,2)+'</td><td></td><td></td><td></td><td></td></tr>';
+    h+='</tbody></table>';
+
+    if(TK){
+      var chart=TK.canvasImage('gradeChart');
+      h+=chart?('<div class=\"rpt-chart rpt-chart--sm\"><img src=\"'+chart+'\" alt=\"Grading curve\"></div>'):'<div class=\"rpt-chart-fallback\">Grading curve unavailable</div>';
+    }
+
+    h+='<table class=\"rpt rpt-tight\"><thead><tr><th>Materials particles %</th><th>D(mm)</th><th colspan=\"2\">Coefficient uniformity &amp; Curvature</th><th>Soil classification</th></tr></thead><tbody>'+
+      '<tr><td>Gravel '+cell(d.gravel,2)+'</td><td>D60 '+cell(d.d60,4)+'</td><td>Cu=D60/D10</td><td>'+cell(d.cu,2)+'</td><td rowspan=\"3\">'+val(info.description||'')+'<br>'+val(classify(d).symbol)+'</td></tr>'+
+      '<tr><td>Sand '+cell(d.sand,2)+'</td><td>D30 '+cell(d.d30,4)+'</td><td>Cc=D30²/(D60xD10)</td><td>'+cell(d.cc,2)+'</td></tr>'+
+      '<tr><td>Silt+ Clay '+cell(d.fines,2)+'</td><td>D10 '+cell(d.d10,4)+'</td><td></td><td></td></tr>'+
+      '</tbody></table>';
+
+    h+='<div class=\"rpt-remarks\">Remarks: '+val(info.purpose||info.description)+' <span class=\"rpt-dots\"></span></div>';
+    h+=signBlock();
+    return h;
+  }
+
+  function classify(d){
+    var rec=TK?TK.sample(state.info.sampleNo):null;
+    var ll=(rec&&String(rec.ll||'')!=='')?Number(rec.ll):NaN;
+    var pi=(rec&&String(rec.pi||'')!=='')?Number(rec.pi):NaN;
+    var fines=d.fines;
+    if(isFinite(fines)&&fines>=15&&isFinite(ll)&&isFinite(pi)){
+      var aLine=0.73*(ll-20);
+      return {symbol:ll>=50?(pi>=aLine?'CH':'MH'):(pi>=aLine?'CL':'ML')};
+    }
+    var well=isFinite(d.cu)&&d.cu>=4&&isFinite(d.cc)&&d.cc>=1&&d.cc<=3;
+    return {symbol:well?'SW':'SP'};
+  }
+
   function printSheet(){
     collect();
-    var info=state.info,meta=[];
-    if(info.project)meta.push('Project: '+info.project);
-    if(info.consultant)meta.push('Consultant / client: '+info.consultant);
-    if(info.source)meta.push('Source of material: '+info.source);
-    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
-    if(info.sampledFrom)meta.push('Sampled from: '+info.sampledFrom);
-    if(info.description)meta.push('Sample description: '+info.description);
-    if(info.purpose)meta.push('Purpose / objective: '+info.purpose);
-    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
-    if(info.checkedBy)meta.push('Checked / verified by: '+info.checkedBy);
-    if(info.dateSampled)meta.push('Date of sampling: '+info.dateSampled);
-    if(info.dateTested)meta.push('Date of testing: '+info.dateTested);
-    if(info.method)meta.push('Test method: '+info.method);
-    var title='Sieve Analysis — Grading & GM'+(info.sampleNo?' — '+info.sampleNo:'');
     draw(true);
-    if(TK){TK.printReport({title:title,meta:meta});}
-    else{window.print();}
+    if(TK)TK.printSheet(buildReport());
+    else window.print();
     draw(false);
   }
 
@@ -776,6 +888,7 @@
     document.querySelectorAll('[data-sign]').forEach(function(node){
       node.textContent=state.info[node.dataset.sign]||'—';
     });
+    applyLinkedSample();
   }
 
   /* ---------- events ---------- */
@@ -808,8 +921,13 @@
     document.querySelectorAll('[data-sign]').forEach(function(node){
       if(node.dataset.sign===t.dataset.info)node.textContent=t.value||'—';
     });
+    if(TK&&t.dataset.info==='sampleNo'){applyLinkedSample();fillInfo();calc();}
     saveSoon();
     draw();
+  });
+  if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
+    state.info.sampleOverride=this.checked?'1':'';
+    applyLinkedSample();fillInfo();calc();saveSoon();
   });
   document.addEventListener('themechange',function(){draw()});
   window.addEventListener('resize',function(){draw()});
@@ -818,6 +936,7 @@
 
   /* ---------- start ---------- */
   restore();
+  if(TK)TK.mountLogoSetup('logoSetup');
   form=state.form||'A';
   el('formSel').value=form;
   limits=loadLimits();

@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="../assets/report.css">
 <style>
   :root{--bad:#ff6b6b}
   [data-theme="light"]{--bad:#c62828}
@@ -28,7 +29,6 @@
   .bad-text{color:var(--bad)}
   .signatures{display:none}
   .remarks-out{display:none}
-  @page{size:A4 landscape;margin:10mm}
   @media print{
     #infoCard{display:none!important}
     #llTable,#plTable{min-width:0}
@@ -92,8 +92,12 @@
         <div class="field"><label for="i-verifiedBy">Verified by (optional)</label><input id="i-verifiedBy" type="text" data-info="verifiedBy" placeholder="Name"></div>
         <div class="field full"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-info="testMethod" placeholder="CML TEST 1.2, 1.3 and 1.4, Ref. BS 1377: Part 2: 1990"></div>
         <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Observations, deviations or classification notes"></div>
+        <div class="field full sample-override"><label for="sampleOverride"><input id="sampleOverride" type="checkbox" data-sample-override> Override NMC sample details (edit the shared fields manually)</label></div>
+        <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
       </div>
     </div>
+
+    <div id="logoSetup"></div>
 
     <div class="tool stack">
       <h3>2. Liquid limit — cone penetration</h3>
@@ -196,6 +200,8 @@
   </section>
 </main>
 
+<div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
 <footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
 
 <script src="../assets/shared.js"></script>
@@ -258,6 +264,23 @@
   }
 
   var state=defaultState(),lastResult=null,restored=false,suppressSave=false;
+  var SAMPLE_MAP={project:'project',location:'location',materialFor:'materialFor',materialFrom:'materialFrom',dateSampled:'dateSampled'};
+  var esc=function(v){return (TK?TK.escapeHTML:escapeHTML)(v);};
+
+  function applyLinkedSample(){
+    if(!TK)return;
+    var linked=state.info.sampleOverride!=='1';
+    var result=linked?TK.linkSample(state.info,state.info.sampleNo,SAMPLE_MAP):{record:null,linked:false};
+    var note=el('sampleNote');
+    if(note)note.textContent=result.linked&&result.record
+      ? 'Shared sample details filled from NMC sample '+state.info.sampleNo+'. Uncheck override to re-link.'
+      : (state.info.sampleOverride==='1'?'Local override active — shared fields are editable.':'');
+    if(el('sampleOverride'))el('sampleOverride').checked=state.info.sampleOverride==='1';
+    each('[data-info="project"],[data-info="location"],[data-info="materialFor"],[data-info="materialFrom"],[data-info="dateSampled"]',function(t){
+      t.readOnly=result.linked&&!!result.record;
+    });
+  }
+
   var drawSoon=TK?TK.debounce(function(){drawAll(false);},120):function(){drawAll(false);};
   var saveSoon=TK?TK.debounce(saveNow,600):function(){};
 
@@ -330,6 +353,7 @@
       t.value=(state.pl[i]&&state.pl[i][t.getAttribute('data-field')])||'';
     });
     syncSignatures();
+    applyLinkedSample();
   }
 
   function buildDeterminationTable(bodyId,attr,rows,count){
@@ -455,6 +479,9 @@
     var spValue=(isFinite(lsValue)&&isFinite(passing425)&&passing425>=0)?lsValue*passing425:NaN;
     var checkTotal=(isFinite(llValue)&&isFinite(plValue)&&isFinite(passing075)&&passing075>=0)?llValue+plValue+passing075:NaN;
     lastResult={ll:ll,pl:pl,llPoints:llPoints,plMc:plMc,trend:trend,fit:fit,mode:mode,partialTrend:partialTrend,llValue:llValue,plValue:plValue,piValue:piValue,lsValue:lsValue,spValue:spValue,checkTotal:checkTotal,passing425:passing425,passing075:passing075};
+    if(TK&&state.info.sampleNo&&isFinite(llValue)&&isFinite(piValue)){
+      TK.saveSample(state.info.sampleNo,{ll:String(llValue),pi:String(piValue)});
+    }
     renderDeterminations();
     setText('llVal',llValue,2);
     setText('plVal',plValue,2);
@@ -583,6 +610,87 @@
   }
 
   /* ---------- print + CSV ---------- */
+  function signBlock(){
+    var info=state.info,d=function(v){return esc(TK?TK.dateDisplay(v):v);};
+    var roles=[
+      ['Prepared by:',info.testedBy,'Assistant Materials Technician',d(info.dateTested)],
+      ['Checked by:',info.checkedBy,"Consultant's Materials Technician",d(info.dateTested)],
+      ['Verified by:',info.verifiedBy||info.checkedBy,"Consultant's Materials Engineer",d(info.dateTested)]
+    ];
+    return '<div class="rpt-sign">'+roles.map(function(x){
+      return '<div><div class="role">'+x[0]+'</div><div class="line">'+(x[3]?' '+x[3]:'')+'</div><div>'+esc(x[1]||'')+'</div><div class="line"></div><div class="title">'+x[2]+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  function buildReport(r){
+    var info=state.info,p=state.prep,k=state.shrink;
+    var dd=function(v){return TK?TK.dateDisplay(v):v;};
+    var value=function(v){return esc(v==null?'':v);};
+    var numCell=function(v,dec){return (typeof v==='number'&&isFinite(v))?fmt(v,dec):'';};
+    var h=TK?TK.logoBand():'<div class="rpt-logos"></div>';
+    h+='<div class="rpt-title">PROJECT:  '+value(info.project)+'\n<span class="main">PLASTICITY  INDEX  (PI) TEST  REPORT</span></div>';
+    if(info.client)h+='<div class="rpt-sub">'+value(info.client)+'</div>';
+
+    h+='<table class="rpt rpt-kv"><tbody>'+
+      '<tr><td class="lbl">LOCATION :</td><td class="val">'+value(info.location)+'</td><td class="lbl2">DATE SAMPLED</td><td class="val2">'+value(dd(info.dateSampled))+'</td></tr>'+
+      '<tr><td class="lbl">MATERIAL FOR:</td><td class="val">'+value(info.materialFor)+'</td><td class="lbl2">DATE TESTED</td><td class="val2">'+value(dd(info.dateTested))+'</td></tr>'+
+      '<tr><td class="lbl">SAMPLE NO</td><td class="val">'+value(info.sampleNo)+'</td><td class="lbl2">TESTED BY</td><td class="val2">'+value(info.testedBy)+'</td></tr>'+
+      '<tr><td class="lbl">MATERIAL FROM</td><td class="val">'+value(info.materialFrom)+'</td><td class="lbl2">CHECKED BY</td><td class="val2">'+value(info.checkedBy)+'</td></tr>'+
+      '</tbody></table>';
+    h+='<table class="rpt"><tbody><tr><td class="lbl">TEST METHOD      '+value((info.testMethod||'').replace(/^CML/,''))+'</td></tr></tbody></table>';
+
+    h+='<table class="rpt rpt-tight"><thead><tr><th class="lbl" style="width:31%">Property</th><th colspan="4">Liquid Limit</th><th colspan="2">Plastic Limit</th></tr>'+
+      '<tr><th class="lbl">Determination</th><th>1</th><th>2</th><th>3</th><th>4</th><th>1</th><th>2</th></tr></thead><tbody>';
+    function row(label,type,calcKey,dec){
+      var cells='';
+      for(var i=0;i<LL_COUNT;i++)cells+='<td class="right">'+(calcKey?numCell(r.ll[i][calcKey],dec):value(state.ll[i][type]))+'</td>';
+      for(var j=0;j<PL_COUNT;j++)cells+='<td class="right">'+(calcKey?numCell(r.pl[j][calcKey],dec):value(state.pl[j][type]))+'</td>';
+      return '<tr><td class="lbl">'+label+'</td>'+cells+'</tr>';
+    }
+    h+='<tr><td class="lbl">Cone penetration (mm)</td>'+[0,1,2,3].map(function(i){return '<td class="right">'+value(state.ll[i].penetration)+'</td>';}).join('')+'<td colspan="2"></td></tr>';
+    h+=row('container no.','containerNo',null,0);
+    h+=row('Wt. Cont+wet soil (g)','wetCont',null,2);
+    h+=row('Wt. Cont+dry soil (g)','dryCont',null,2);
+    h+=row('Wt. of Moisture (g)',null,'water',2);
+    h+=row('Wt. of container (g)','contMass',null,2);
+    h+=row('Wt. Of dry soil (g)',null,'drySoil',2);
+    h+=row('Moisture content (%)',null,'mc',2);
+    h+='<tr><td class="lbl">Average moisture content (%)</td><td colspan="4"></td><td class="right" colspan="2">'+numCell(r.plValue,2)+'</td></tr>';
+    h+='</tbody></table>';
+
+    if(TK){
+      var chart=TK.canvasImage('llChart');
+      h+=chart?('<div class="rpt-chart rpt-chart--sm"><img src="'+chart+'" alt="Penetration moisture chart"></div>'):'<div class="rpt-chart-fallback">Chart unavailable</div>';
+    }
+
+    h+='<div class="rpt-side"><table class="rpt rpt-tight"><tbody>'+
+      '<tr><td class="lbl" colspan="2">Sample preparation</td></tr>'+
+      '<tr><td class="lbl">As received</td><td>'+value(p.preparation)+'</td></tr>'+
+      '<tr><td class="lbl">Air dried</td><td>'+value(p.airDriedTemp)+' ℃</td></tr>'+
+      '<tr><td class="lbl">Oven dried</td><td>'+value(p.ovenDriedTemp)+' ℃</td></tr>'+
+      '<tr><td class="lbl">Washed (0.425)</td><td>Yes</td></tr>'+
+      '<tr><td class="lbl">Proportion retained on 425µm sieve</td><td>'+value(p.passing075)+' %</td></tr>'+
+      '</tbody></table>';
+    h+='<table class="rpt rpt-tight"><tbody>'+
+      '<tr><td class="lbl" colspan="2">Atterberg limits %</td></tr>'+
+      '<tr><td class="lbl">LL(%)</td><td class="right">'+numCell(r.llValue,2)+'</td></tr>'+
+      '<tr><td class="lbl">PL(%)</td><td class="right">'+numCell(r.plValue,2)+'</td></tr>'+
+      '<tr><td class="lbl">PI</td><td class="right">'+numCell(r.piValue,2)+'</td></tr>'+
+      '</tbody></table></div>';
+
+    h+='<table class="rpt rpt-tight"><thead><tr><th colspan="4">Linear shrinkage and shrinkage product</th></tr></thead><tbody>'+
+      '<tr><td class="lbl">Specimen reference</td><td colspan="3">'+value(k.specimenRef)+'</td></tr>'+
+      '<tr><td class="lbl">Initial length</td><td class="unit">mm</td><td class="right">'+value(k.initialLength)+'</td><td></td></tr>'+
+      '<tr><td class="lbl">Oven-dried length</td><td class="unit">mm</td><td class="right">'+value(k.driedLength)+'</td><td></td></tr>'+
+      '<tr><td class="lbl">Linear shrinkage</td><td class="unit">%</td><td class="right">'+numCell(r.lsValue,2)+'</td><td></td></tr>'+
+      '<tr><td class="lbl">Shrinkage product = LS X % 0.425</td><td class="unit">SP</td><td class="right">'+numCell(r.spValue,2)+'</td><td></td></tr>'+
+      '</tbody></table>';
+
+    h+='<div class="rpt-remarks">Remarks: '+value(info.remarks)+' <span class="rpt-dots"></span></div>';
+    h+=signBlock();
+    return h;
+  }
+
   function printSheet(){
     syncFromDom();
     var r=calc();
@@ -590,24 +698,8 @@
       el('message').textContent='Enter at least two liquid-limit determinations and one plastic-limit determination before printing.';
       return;
     }
-    var info=state.info,meta=[];
-    if(info.project)meta.push('Project: '+info.project);
-    if(info.client)meta.push('Client / consultant: '+info.client);
-    if(info.location)meta.push('Location: '+info.location);
-    if(info.materialFor)meta.push('Material for: '+info.materialFor);
-    if(info.materialFrom)meta.push('Material from: '+info.materialFrom);
-    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
-    if(info.dateSampled)meta.push('Date sampled: '+info.dateSampled);
-    if(info.dateTested)meta.push('Date tested: '+info.dateTested);
-    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
-    if(info.checkedBy)meta.push('Checked by: '+info.checkedBy);
-    if(info.testMethod)meta.push('Test method: '+info.testMethod);
-    meta.push('LL: '+fmt(r.llValue,2)+' % · PL: '+fmt(r.plValue,2)+' % · PI: '+fmt(r.piValue,2));
-    if(isFinite(r.lsValue))meta.push('Linear shrinkage: '+fmt(r.lsValue,2)+' % · Shrinkage product: '+fmt(r.spValue,2));
-    if(info.remarks)meta.push('Remarks: '+info.remarks);
-    var title='Atterberg Limits — Plasticity Index'+(info.sampleNo?' — '+info.sampleNo:'');
     drawAll(true);
-    if(TK)TK.printReport({title:title,meta:meta});
+    if(TK)TK.printSheet(buildReport(r));
     else window.print();
     drawAll(false);
   }
@@ -659,7 +751,12 @@
   function onInput(event){
     var t=event.target;
     if(!t||!t.getAttribute)return;
-    if(t.getAttribute('data-info')){state.info[t.getAttribute('data-info')]=t.value;syncSignatures();saveSoon();return;}
+    if(t.getAttribute('data-info')){
+      var key=t.getAttribute('data-info');
+      state.info[key]=t.value;
+      if(TK&&key==='sampleNo'){applyLinkedSample();syncInputs();}
+      syncSignatures();saveSoon();return;
+    }
     if(t.getAttribute('data-prep')){state.prep[t.getAttribute('data-prep')]=t.value;calc();saveSoon();return;}
     if(t.getAttribute('data-shrink')){state.shrink[t.getAttribute('data-shrink')]=t.value;calc();saveSoon();return;}
     if(t.getAttribute('data-trend')){state.trend[t.getAttribute('data-trend')]=t.value;calc();saveSoon();return;}
@@ -692,11 +789,16 @@
     buildDeterminationTable('llBody','ll',LL_ROWS,LL_COUNT);
     buildDeterminationTable('plBody','pl',PL_ROWS,PL_COUNT);
     restore();
+    if(TK)TK.mountLogoSetup('logoSetup');
     syncInputs();
     calc();
     if(restored&&el('message'))el('message').textContent='Restored saved Atterberg sheet. '+el('message').textContent;
     drawAll(false);
     document.addEventListener('input',onInput);
+    if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
+      state.info.sampleOverride=this.checked?'1':'';
+      applyLinkedSample();syncInputs();saveSoon();
+    });
     document.addEventListener('themechange',function(){drawAll(false);});
     window.addEventListener('afterprint',function(){drawAll(false);});
     window.addEventListener('resize',TK?TK.debounce(function(){drawAll(false);},180):function(){drawAll(false);});

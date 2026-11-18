@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="../assets/report.css">
 <style>
   :root{--bad:#ff6b6b}
   [data-theme="light"]{--bad:#c62828}
@@ -73,18 +74,24 @@
       <h3>1. Test information</h3>
       <div class="fields mt">
         <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
+        <div class="field"><label for="i-sampleNo">Sample no.</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/001"></div>
         <div class="field"><label for="i-location">Location</label><input id="i-location" type="text" data-info="location" placeholder="e.g. Km 0+012.5 – 0+112.5"></div>
+        <div class="field"><label for="i-materialFor">Material for</label><input id="i-materialFor" type="text" data-info="materialFor" placeholder="e.g. Quality control"></div>
         <div class="field"><label for="i-description">Description</label><input id="i-description" type="text" data-info="description" placeholder="e.g. Natural gravel material"></div>
-        <div class="field"><label for="i-material">Material source</label><input id="i-material" type="text" data-info="material" placeholder="e.g. Borrow pit"></div>
+        <div class="field"><label for="i-material">Material from</label><input id="i-material" type="text" data-info="material" placeholder="e.g. Borrow pit"></div>
         <div class="field"><label for="i-road">Road name</label><input id="i-road" type="text" data-info="road" placeholder="e.g. Road K"></div>
         <div class="field full"><label for="i-purpose">Purpose / objective</label><input id="i-purpose" type="text" data-info="purpose" placeholder="e.g. C1 trial"></div>
         <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Optional remarks"></div>
         <div class="field"><label for="i-testedBy">Tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
         <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-verifiedBy">Verified by</label><input id="i-verifiedBy" type="text" data-info="verifiedBy" placeholder="Name"></div>
         <div class="field"><label for="i-dateSampled">Date sampled</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
         <div class="field"><label for="i-dateTested">Date tested</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
+        <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
       </div>
     </div>
+
+    <div id="logoSetup"></div>
 
     <div class="tool stack">
       <div class="head-row">
@@ -139,6 +146,8 @@
   </section>
 </main>
 
+<div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
 <footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
 
 <script src="../assets/shared.js"></script>
@@ -177,12 +186,35 @@
   function blankSet(){return {samples:[blankSample(),blankSample(),blankSample()]}}
   function defaultState(){
     return {
-      info:{project:'',location:'',description:'',material:'',road:'',purpose:'',remarks:'',testedBy:'',checkedBy:'',dateSampled:'',dateTested:todayISO()},
+      info:{project:'',sampleNo:'',location:'',materialFor:'',description:'',material:'',road:'',purpose:'',remarks:'',testedBy:'',checkedBy:'',verifiedBy:'',dateSampled:'',dateTested:todayISO()},
       sets:[blankSet()]
     };
   }
 
   var state=defaultState(),restored=false;
+  /* NMC is the master record for shared sample identity and its average moisture. */
+  var SAMPLE_MAP={project:'project',location:'location',materialFor:'materialFor',materialFrom:'material',dateSampled:'dateSampled'};
+  var esc=function(v){return (TK?TK.escapeHTML:escapeHTML)(v);};
+
+  function setAverage(set){
+    if(!set)return NaN;
+    var vals=[];
+    set.samples.forEach(function(smp){
+      var r=sampleCalc(smp);
+      if(r.state==='ok')vals.push(r.w);
+    });
+    return vals.length?vals.reduce(function(a,b){return a+b},0)/vals.length:NaN;
+  }
+
+  function syncMasterSample(){
+    if(!TK||!state.info.sampleNo)return;
+    var fields={};
+    Object.keys(SAMPLE_MAP).forEach(function(k){fields[k]=state.info[SAMPLE_MAP[k]]||''});
+    fields.nmc=String(setAverage(state.sets[0])||'');
+    TK.saveSample(state.info.sampleNo,fields);
+    var note=el('sampleNote');
+    if(note)note.textContent='Master sample '+state.info.sampleNo+' saved. Other soil tests with this number will copy these shared details.';
+  }
 
   function restore(){
     if(!TK)return;
@@ -222,6 +254,7 @@
   function saveNow(){
     if(!TK)return;
     var ok=TK.store('moisture-content').save(state);
+    syncMasterSample();
     var status=el('saveState');
     if(status){
       var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
@@ -319,6 +352,7 @@
     });
 
     renderSummary(setRows,all,allCount);
+    if(TK)syncMasterSample();
   }
 
   function renderSummary(rows,all,allCount){
@@ -396,22 +430,71 @@
     el('message').textContent='Sheet cleared. Enter the masses for the first sample.';
   }
 
+  function signBlock(){
+    var info=state.info,d=function(v){return TK?TK.dateDisplay(v):v};
+    var roles=[
+      ['Prepared by:',info.testedBy,'Assistant Materials Technician',d(info.dateTested)],
+      ['Checked by:',info.checkedBy,"Consultant's Materials Technician",d(info.dateTested)],
+      ['Verified by:',info.verifiedBy||info.checkedBy,"Consultant's Materials Engineer",d(info.dateTested)]
+    ];
+    return '<div class=\"rpt-sign\">'+roles.map(function(x){
+      return '<div><div class=\"role\">'+x[0]+'</div><div class=\"line\">'+(x[3]?' '+esc(x[3]):'')+'</div><div>'+esc(x[1]||'')+'</div><div class=\"line\"></div><div class=\"title\">'+x[2]+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  function buildReport(){
+    var info=state.info,set=state.sets[0]||{samples:[]};
+    var dd=function(v){return TK?TK.dateDisplay(v):v};
+    var val=function(v){return esc(v==null?'':v)};
+    var cell=function(v,dec){return (typeof v==='number'&&isFinite(v))?fmt(v,dec):''};
+    var h=TK?TK.logoBand():'<div class=\"rpt-logos\"></div>';
+    h+='<div class=\"rpt-title\">PROJECT:  '+val(info.project)+'\n<span class=\"main\">Natural Moisture Content (NMC)</span></div>';
+    h+='<table class=\"rpt rpt-kv\"><tbody>'+
+      '<tr><td class=\"lbl\">LOCATION</td><td class=\"val\">'+val(info.location)+'</td><td class=\"lbl2\">DATE SAMPLED:</td><td class=\"val2\">'+val(dd(info.dateSampled))+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIAL FOR</td><td class=\"val\">'+val(info.materialFor)+'</td><td class=\"lbl2\">DATE TESTED:</td><td class=\"val2\">'+val(dd(info.dateTested))+'</td></tr>'+
+      '<tr><td class=\"lbl\">SAMPLE NO</td><td class=\"val\">'+val(info.sampleNo)+'</td><td class=\"lbl2\">TESTED BY:</td><td class=\"val2\">'+val(info.testedBy)+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIAL FROM</td><td class=\"val\">'+val(info.material||info.description)+'</td><td class=\"lbl2\">CHECKED BY:</td><td class=\"val2\">'+val(info.checkedBy)+'</td></tr>'+
+      '</tbody></table>';
+    h+='<table class=\"rpt\"><tbody><tr><td class=\"lbl\">TEST METHOD              CML TEST 1.1, ref. bs 1377 :Part 2: 1990</td></tr></tbody></table>';
+
+    var n=set.samples.length;
+    h+='<table class=\"rpt rpt-tight\"><thead><tr><th class=\"lbl\" style=\"width:44%\">Parameter</th><th class=\"unit\">Unit</th>';
+    for(var i=0;i<n;i++)h+='<th>Det. '+(i+1)+'</th>';
+    h+='</tr></thead><tbody>';
+    function textRow(label,unit,key,computed,dec){
+      var cells='';
+      for(var i=0;i<n;i++){
+        var smp=set.samples[i],r=sampleCalc(smp);
+        var v=computed?cell(r[key],dec):val(smp[key]);
+        cells+='<td class=\"right\">'+v+'</td>';
+      }
+      return '<tr><td class=\"lbl\">'+label+'</td><td class=\"unit\">'+unit+'</td>'+cells+'</tr>';
+    }
+    h+=textRow('Chainage / side','','chainage',false,0).replace('<td class=\"right\">','<td class=\"right\">');
+    h+=textRow('Container NO.','NO.','container',false,0);
+    h+=textRow('WT. Of wet soil +Container','g','wet',false,2);
+    h+=textRow('WT. Of dry soil + Container','g','dry',false,2);
+    h+=textRow('WT. Of moisture','g','water',true,2);
+    h+=textRow('WT. Of Container','g','tare',false,2);
+    h+=textRow('WT. Of dry soil','g','drySoil',true,2);
+    h+=textRow('Moisture content','%','w',true,2);
+    h+='<tr class=\"rpt-section\"><td class=\"lbl\">Average moisture content</td><td class=\"unit\">%</td><td class=\"right\" colspan=\"'+n+'\">'+cell(setAverage(set),2)+'</td></tr>';
+    h+='</tbody></table>';
+    if(state.sets.length>1)h+='<p class=\"rpt-note\">Showing test set 1 of '+state.sets.length+' on this sheet.</p>';
+    h+='<div class=\"rpt-remarks\">Remarks: '+val(info.remarks)+' <span class=\"rpt-dots\"></span></div>';
+    h+=signBlock();
+    return h;
+  }
+
   function printReport(){
-    var info=state.info,meta=[];
-    if(info.project)meta.push('Project: '+info.project);
-    if(info.location)meta.push('Location: '+info.location);
-    if(info.description)meta.push('Description: '+info.description);
-    if(info.material)meta.push('Material source: '+info.material);
-    if(info.road)meta.push('Road name: '+info.road);
-    if(info.purpose)meta.push('Purpose / objective: '+info.purpose);
-    if(info.remarks)meta.push('Remarks: '+info.remarks);
-    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
-    if(info.checkedBy)meta.push('Checked by: '+info.checkedBy);
-    if(info.dateSampled)meta.push('Date sampled: '+info.dateSampled);
-    if(info.dateTested)meta.push('Date tested: '+info.dateTested);
-    var title='Moisture Content'+(info.road?' — '+info.road:'');
-    if(TK){TK.printReport({title:title,meta:meta});}
-    else{window.print();}
+    var set=state.sets[0]||{samples:[]};
+    var hasData=set.samples.some(function(smp){return sampleCalc(smp).state==='ok'});
+    if(!hasData){
+      el('message').textContent='Enter wet, dry and container masses for the first test set before printing.';
+      return;
+    }
+    if(TK)TK.printSheet(buildReport());
+    else window.print();
   }
 
   function exportCsv(){
@@ -473,6 +556,7 @@
       document.querySelectorAll('[data-sign]').forEach(function(node){
         if(node.dataset.sign===input.dataset.info)node.textContent=input.value||'—';
       });
+      syncMasterSample();
       saveSoon();
     });
   });
@@ -485,9 +569,11 @@
 
   /* ---------- start ---------- */
   restore();
+  if(TK)TK.mountLogoSetup('logoSetup');
   fillInfo();
   renderSets();
   recalc();
+  syncMasterSample();
   if(restored)el('message').textContent='Restored your saved sheet from this browser.';
 })();
 </script>

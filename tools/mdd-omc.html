@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="../assets/report.css">
 <style>
   :root{--bad:#ff6b6b}
   [data-theme="light"]{--bad:#c62828}
@@ -66,18 +67,24 @@
         <div class="field"><label for="i-consultant">Consultant</label><input id="i-consultant" type="text" data-info="consultant" placeholder="e.g. Consultant name"></div>
         <div class="field"><label for="i-source">Source of material</label><input id="i-source" type="text" data-info="source" placeholder="e.g. Nyambula borrow pit"></div>
         <div class="field"><label for="i-sampleNo">Sample number</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/002"></div>
-        <div class="field"><label for="i-sampledFrom">Sampled from</label><input id="i-sampledFrom" type="text" data-info="sampledFrom" placeholder="e.g. Km 0+075, LHS"></div>
-        <div class="field"><label for="i-testedBy">Tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-sampledFrom">Location / sampled from</label><input id="i-sampledFrom" type="text" data-info="sampledFrom" placeholder="e.g. Km 345 borrow pit"></div>
+        <div class="field"><label for="i-materialFor">Layer no. / material for</label><input id="i-materialFor" type="text" data-info="materialFor" placeholder="e.g. Quality control"></div>
+        <div class="field"><label for="i-testedBy">Technician / tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
         <div class="field full"><label for="i-description">Sample description</label><input id="i-description" type="text" data-info="description" placeholder="e.g. Natural gravel, brown"></div>
         <div class="field"><label for="i-purpose">Purpose / objective</label><input id="i-purpose" type="text" data-info="purpose" placeholder="e.g. C1 trial"></div>
-        <div class="field"><label for="i-checkedBy">Checked / verified by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-verifiedBy">Verified by (optional)</label><input id="i-verifiedBy" type="text" data-info="verifiedBy" placeholder="Name"></div>
         <div class="field"><label for="i-dateSampled">Date of sampling</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
         <div class="field"><label for="i-dateTested">Date of testing</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
         <div class="field"><label for="i-nmc">Natural moisture content, NMC (%)</label><input id="i-nmc" type="number" min="0" step="any" inputmode="decimal" data-info="nmc" placeholder="Optional"></div>
         <div class="field"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-meta="testMethod" placeholder="e.g. CML 1.9"></div>
         <div class="field full"><label for="i-compaction">Compaction method</label><input id="i-compaction" type="text" data-meta="compaction" placeholder="e.g. BS Heavy — CBR mould, 5 layers, 62 blows"></div>
+        <div class="field full sample-override"><label for="sampleOverride"><input id="sampleOverride" type="checkbox" data-sample-override> Override NMC sample details (edit the shared fields manually)</label></div>
+        <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
       </div>
     </div>
+
+    <div id="logoSetup"></div>
 
     <div class="tool stack" id="mouldCard">
       <h3>2. Mould information</h3>
@@ -168,6 +175,8 @@
   </section>
 </main>
 
+<div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
 <footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
 
 <script src="../assets/shared.js"></script>
@@ -203,7 +212,7 @@
   /* ---------- state ---------- */
   function defaultState(){
     return {
-      info:{project:'',contractor:'',consultant:'',source:'',sampleNo:'',sampledFrom:'',testedBy:'',checkedBy:'',description:'',purpose:'',dateSampled:'',dateTested:todayISO(),nmc:''},
+      info:{project:'',contractor:'',consultant:'',source:'',sampleNo:'',sampledFrom:'',materialFor:'',testedBy:'',checkedBy:'',verifiedBy:'',description:'',purpose:'',dateSampled:'',dateTested:todayISO(),nmc:''},
       meta:{testMethod:'CML 1.9, Ref. BS 1377: Part 4: 1990',compaction:'BS Heavy — CBR mould, 5 layers, 62 blows, 4.5 kg rammer'},
       mould:{id:'',mass:'',volume:''},
       points:[]
@@ -211,6 +220,23 @@
   }
 
   var state=defaultState(),editingIndex=null,lastResult=null,restored=false;
+  var SAMPLE_MAP={project:'project',location:'sampledFrom',materialFor:'materialFor',materialFrom:'source',dateSampled:'dateSampled',nmc:'nmc'};
+  var esc=function(v){return (TK?TK.escapeHTML:escapeHTML)(v);};
+
+  function applyLinkedSample(){
+    if(!TK)return;
+    var linked=state.info.sampleOverride!=='1';
+    var result=linked?TK.linkSample(state.info,state.info.sampleNo,SAMPLE_MAP):{record:null,linked:false};
+    var note=el('sampleNote');
+    if(note)note.textContent=result.linked&&result.record
+      ? 'Shared sample details filled from NMC sample '+state.info.sampleNo+'. Uncheck override to re-link.'
+      : (state.info.sampleOverride==='1'?'Local override active — shared fields are editable.':'');
+    if(el('sampleOverride'))el('sampleOverride').checked=state.info.sampleOverride==='1';
+    ['project','sampledFrom','materialFor','source','dateSampled','nmc'].forEach(function(k){
+      var input=document.querySelector('[data-info="'+k+'"]');
+      if(input)input.readOnly=result.linked&&!!result.record&&k!=='nmc';
+    });
+  }
 
   var POINT_FIELDS=['label','originalSample','waterAdded','mouldWet','containerId','containerMass','containerWet','containerDry'];
   var FORM_IDS={label:'pointLabel',originalSample:'originalSample',waterAdded:'waterAdded',mouldWet:'mouldWet',containerId:'containerId',containerMass:'containerMass',containerWet:'containerWet',containerDry:'containerDry'};
@@ -595,6 +621,79 @@
   }
 
   /* ---------- print + CSV ---------- */
+  function signBlock(){
+    var info=state.info,d=function(v){return TK?TK.dateDisplay(v):v};
+    var roles=[
+      ['Prepared by:',info.testedBy,"Consultant's Materials Technician",d(info.dateTested)],
+      ['Checked by:',info.checkedBy,"Consultant's Materials Technician",d(info.dateTested)],
+      ['Verified by:',info.verifiedBy||info.checkedBy,"Consultant's Materials Engineer",d(info.dateTested)]
+    ];
+    return '<div class=\"rpt-sign\">'+roles.map(function(x){
+      return '<div><div class=\"role\">'+x[0]+'</div><div class=\"line\">'+(x[3]?' '+esc(x[3]):'')+'</div><div>'+esc(x[1]||'')+'</div><div class=\"line\"></div><div class=\"title\">'+x[2]+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  function buildReport(){
+    var info=state.info,data=pointData(),n=data.length;
+    var dd=function(v){return TK?TK.dateDisplay(v):v};
+    var val=function(v){return esc(v==null?'':v)};
+    var cell=function(v,dec){return (typeof v==='number'&&isFinite(v))?fmt(v,dec):''};
+    var h=TK?TK.logoBand():'<div class=\"rpt-logos\"></div>';
+    h+='<div class=\"rpt-title\">PROJECT:  '+val(info.project)+'\n<span class=\"main\">COMPACTION TEST- (Maximum Dry Density)</span></div>';
+    h+='<table class=\"rpt rpt-kv\"><tbody>'+
+      '<tr><td class=\"lbl\">LOCATION:</td><td class=\"val\">'+val(info.sampledFrom)+'</td><td class=\"lbl2\">DATE SAMPLED:</td><td class=\"val2\">'+val(dd(info.dateSampled))+'</td></tr>'+
+      '<tr><td class=\"lbl\">LAYER NO</td><td class=\"val\">'+val(info.materialFor)+'</td><td class=\"lbl2\">DATE TESTED</td><td class=\"val2\">'+val(dd(info.dateTested))+'</td></tr>'+
+      '<tr><td class=\"lbl\">SAMPLE NO</td><td class=\"val\">'+val(info.sampleNo)+'</td><td class=\"lbl2\">TECHNICIAN:</td><td class=\"val2\">'+val(info.testedBy)+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIAL FROM</td><td class=\"val\">'+val(info.source)+'</td><td class=\"lbl2\">CHECKED BY:</td><td class=\"val2\">'+val(info.checkedBy)+'</td></tr>'+
+      '</tbody></table>';
+    h+='<table class=\"rpt rpt-tight\"><tbody>'+
+      '<tr><td class=\"lbl\">TEST REPORT</td></tr>'+
+      '<tr><td class=\"lbl\">TEST METHOD: '+val(state.meta.testMethod||'CML TEST 1.9  Ref: BS 1377 Part 4:1990')+'</td></tr>'+
+      '<tr><td class=\"lbl\">MOULD ID: '+val(state.mould.id)+' &nbsp; COMPACTION: '+val(state.meta.compaction)+'</td></tr>'+
+      '</tbody></table>';
+
+    h+='<table class=\"rpt rpt-tight\"><thead><tr><th class=\"lbl\" style=\"width:35%\">Bulk density determination</th><th class=\"unit\">Unit</th>';
+    for(var i=0;i<n;i++)h+='<th>'+val(data[i].label)+'</th>';
+    h+='</tr></thead><tbody>';
+    function bulk(label,unit,fn,dec){
+      var cells='';
+      for(var i=0;i<n;i++)cells+='<td class=\"right\">'+cell(fn(data[i],state.points[i],i),dec)+'</td>';
+      return '<tr><td class=\"lbl\">'+label+'</td><td class=\"unit\">'+unit+'</td>'+cells+'</tr>';
+    }
+    h+=bulk('Test NO.','',function(d,r,i){return i+1},0);
+    h+=bulk('Weight of sample','g',function(d,r){return num(r.originalSample)},2);
+    h+=bulk('Water Added','%',function(d){return d.waterAdded},2);
+    h+=bulk('Weight of mould + sample','g',function(d,r){return num(r.mouldWet)},2);
+    h+=bulk('Weight of mould','g',function(){return num(state.mould.mass)},2);
+    h+=bulk('Weight of sample','g',function(d){return d.state==='ok'?d.wetSoil:NaN},2);
+    h+=bulk('Volume of mould','cm3',function(){return num(state.mould.volume)},2);
+    h+=bulk('Wet density','Kg/m3',function(d){return d.state==='ok'?d.wetDensity*1000:NaN},2);
+    h+='<tr class=\"rpt-section\"><td colspan=\"'+(n+2)+'\">Moisture content determination</td></tr>';
+    h+='<tr><td class=\"lbl\">Container NO.</td><td></td>'+data.map(function(d,i){return '<td class=\"right\">'+val(state.points[i].containerId)+'</td>'}).join('')+'</tr>';
+    h+=bulk('WT. Of wet soil +Container','g',function(d,r){return num(r.containerWet)},2);
+    h+=bulk('WT. Of dry soil + Container','g',function(d,r){return num(r.containerDry)},2);
+    h+=bulk('WT. Of moisture','g',function(d){return d.state==='ok'?d.water:NaN},2);
+    h+=bulk('WT. Of Container','g',function(d,r){return num(r.containerMass)},2);
+    h+=bulk('WT. Of dry soil','g',function(d){return d.state==='ok'?d.drySample:NaN},2);
+    h+=bulk('Moisture content','%',function(d){return d.w},2);
+    h+=bulk('Dry density','Kg/m3',function(d){return d.state==='ok'?d.dryDensity*1000:NaN},2);
+    h+='</tbody></table>';
+
+    if(TK){
+      var chart=TK.canvasImage('compactionChart');
+      h+=chart?('<div class=\"rpt-chart rpt-chart--sm\"><img src=\"'+chart+'\" alt=\"Compaction curve\"></div>'):'<div class=\"rpt-chart-fallback\">Compaction curve unavailable</div>';
+    }
+    var mdd=lastResult&&lastResult.peak?lastResult.peak.y*1000:NaN,
+        omc=lastResult&&lastResult.peak?lastResult.peak.x:NaN,
+        nmc=num(info.nmc);
+    h+='<div class=\"rpt-callout\"><div><span>MDD:</span><b>'+cell(mdd,2)+'</b><span>kg/m³</span></div>'+
+      '<div><span>OMC:</span><b>'+cell(omc,2)+'</b><span>%</span></div>'+
+      '<div><span>NMC %</span><b>'+cell(nmc,2)+'</b><span>%</span></div></div>';
+    h+='<div class=\"rpt-remarks\">Remarks: '+val(info.description||info.purpose)+' <span class=\"rpt-dots\"></span></div>';
+    h+=signBlock();
+    return h;
+  }
+
   function printSheet(){
     var msg=el('mddMessage');
     if(state.points.length<5){
@@ -605,27 +704,9 @@
       msg.textContent='Check the test points before printing the report.';
       return;
     }
-    var info=state.info,meta=[];
-    if(info.project)meta.push('Project: '+info.project);
-    if(info.contractor)meta.push('Contractor: '+info.contractor);
-    if(info.consultant)meta.push('Consultant: '+info.consultant);
-    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
-    if(info.source)meta.push('Source of material: '+info.source);
-    if(info.sampledFrom)meta.push('Sampled from: '+info.sampledFrom);
-    if(info.description)meta.push('Sample description: '+info.description);
-    if(info.purpose)meta.push('Purpose / objective: '+info.purpose);
-    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
-    if(info.checkedBy)meta.push('Checked / verified by: '+info.checkedBy);
-    if(info.dateSampled)meta.push('Date of sampling: '+info.dateSampled);
-    if(info.dateTested)meta.push('Date of testing: '+info.dateTested);
-    if(state.meta.testMethod)meta.push('Test method: '+state.meta.testMethod);
-    if(state.meta.compaction)meta.push('Compaction: '+state.meta.compaction);
-    if(state.mould.id)meta.push('Mould: '+state.mould.id+(state.mould.volume?' · '+state.mould.volume+' cm³':''));
-    if(isFinite(num(info.nmc)))meta.push('NMC: '+fmt(num(info.nmc),2)+' %');
-    var title='Proctor Compaction Test — MDD & OMC'+(info.sampleNo?' — '+info.sampleNo:'');
     drawCompactionChart(true);
-    if(TK){TK.printReport({title:title,meta:meta});}
-    else{window.print();}
+    if(TK)TK.printSheet(buildReport());
+    else window.print();
     drawCompactionChart(false);
   }
 
@@ -703,6 +784,7 @@
     document.querySelectorAll('[data-sign]').forEach(function(node){
       node.textContent=state.info[node.dataset.sign]||'—';
     });
+    applyLinkedSample();
   }
   function fillMould(){
     document.querySelectorAll('[data-mould]').forEach(function(input){
@@ -741,6 +823,7 @@
         if(node.dataset.sign===t.dataset.info)node.textContent=t.value||'—';
       });
       if(t.dataset.info==='nmc')updateNmc();
+      if(TK&&t.dataset.info==='sampleNo'){applyLinkedSample();fillInfo();updateNmc();}
       saveSoon();
     }else if(t.dataset.meta){
       state.meta[t.dataset.meta]=t.value;
@@ -754,6 +837,10 @@
     }
   });
 
+  if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
+    state.info.sampleOverride=this.checked?'1':'';
+    applyLinkedSample();fillInfo();updateNmc();saveSoon();
+  });
   el('calculateMdd').addEventListener('click',function(){calculate(false)});
   el('btnPrint').addEventListener('click',printSheet);
   el('btnCsv').addEventListener('click',exportCsv);
@@ -765,6 +852,7 @@
 
   /* ---------- start ---------- */
   restore();
+  if(TK)TK.mountLogoSetup('logoSetup');
   fillInfo();
   fillMould();
   renderRows();

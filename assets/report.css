@@ -1,0 +1,143 @@
+/* ==========================================================
+   MbiseCAD — template-faithful soil test reports
+   Print-only A4 portrait sheets matching the Excel templates.
+   ========================================================== */
+
+.print-sheet{display:none}
+
+@page{size:A4 portrait;margin:6mm 8mm}
+
+@media print{
+  html,body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important}
+  body>header,body>main,body>footer,.print-head{display:none!important}
+  .print-sheet{
+    display:block!important;
+    width:100%!important;
+    font:7.2pt/1.16 Arial,Helvetica,sans-serif;
+    color:#000!important;
+  }
+  .print-sheet *{box-sizing:border-box!important}
+  .rpt-page{break-inside:avoid;page-break-inside:avoid}
+  .rpt-page--2{break-before:page;page-break-before:always}
+
+  .rpt-logos{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    align-items:center;
+    gap:4mm;
+    height:22mm;
+    margin:0 0 2mm;
+  }
+  .rpt-logos img{
+    display:block;
+    max-width:100%;
+    max-height:19mm;
+    width:auto;
+    height:auto;
+    margin:0 auto;
+    object-fit:contain;
+  }
+  .rpt-logos img:first-child{justify-self:start;margin-left:0}
+  .rpt-logos img:last-child{justify-self:end;margin-right:0}
+
+  .rpt-title{
+    text-align:center;
+    font-weight:700;
+    font-size:10pt;
+    line-height:1.25;
+    margin:1mm 0 2mm;
+    white-space:pre-line;
+  }
+  .rpt-title .main{font-size:12pt;font-weight:700}
+  .rpt-sub{font-weight:700;text-align:center;margin:1mm 0 2mm;font-size:8pt}
+
+  table.rpt{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    margin:0 0 2mm;
+  }
+  table.rpt th,table.rpt td{
+    border:1px solid #000;
+    padding:1px 2px;
+    vertical-align:middle;
+    font-size:7.1pt;
+    line-height:1.12;
+    overflow:hidden;
+    word-wrap:break-word;
+  }
+  table.rpt th{font-weight:700;text-align:center}
+  table.rpt td.center,table.rpt th.center{text-align:center}
+  table.rpt td.right{text-align:right;font-variant-numeric:tabular-nums}
+  table.rpt td.lbl,table.rpt th.lbl{text-align:left;font-weight:600}
+  table.rpt td.unit{text-align:center;width:13mm}
+  table.rpt td.note{font-size:6.8pt}
+  table.rpt thead{display:table-header-group}
+  table.rpt tr{break-inside:avoid;page-break-inside:avoid}
+  .rpt-section td{font-weight:700;text-align:left;background:#eee}
+
+  .rpt-kv td.lbl{width:23%}
+  .rpt-kv td.val{width:27%}
+  .rpt-kv td.lbl2{width:23%}
+  .rpt-kv td.val2{width:27%}
+
+  .rpt-chart{margin:1mm 0 2mm;text-align:center;break-inside:avoid;page-break-inside:avoid}
+  .rpt-chart img{display:block;width:100%;max-height:50mm;height:auto;margin:0 auto;object-fit:contain}
+  .rpt-chart--sm img{max-height:42mm}
+  .rpt-chart--lg img{max-height:62mm}
+  .rpt-chart-fallback{height:32mm;border:1px dashed #999;color:#666;padding:8mm;font-size:7pt}
+
+  .rpt-callout{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    border:1px solid #000;
+    margin:0 0 2mm;
+  }
+  .rpt-callout div{padding:1.5mm 2mm;text-align:center;border-right:1px solid #000}
+  .rpt-callout div:last-child{border-right:0}
+  .rpt-callout b{display:block;font-size:9pt}
+  .rpt-callout span{font-size:6.8pt}
+
+  .rpt-remarks{margin:2mm 0 1mm;font-size:7pt}
+  .rpt-dots{display:inline-block;border-bottom:1px dotted #000;min-width:120mm;height:3mm;vertical-align:middle}
+
+  .rpt-sign{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:5mm;
+    border-top:1px solid #000;
+    padding-top:2mm;
+    margin-top:2mm;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  .rpt-sign>div{text-align:center}
+  .rpt-sign .role{font-weight:700;font-size:7.2pt}
+  .rpt-sign .line{border-bottom:1px dotted #000;height:5mm;margin:1mm 0}
+  .rpt-sign .title{font-size:6.8pt}
+
+  .rpt-note{margin:1mm 0;font-size:6.6pt;color:#444}
+  .rpt-tight th,.rpt-tight td{padding:0 1px;font-size:6.7pt}
+  .rpt-mini th,.rpt-mini td{padding:0 1px;font-size:6.2pt}
+  .rpt-cols-14{width:100%;table-layout:fixed}
+  .rpt-cols-14 td,.rpt-cols-14 th{padding:0 1px;font-size:6.1pt}
+
+  .rpt-two-up{display:grid;grid-template-columns:1fr 1fr;gap:3mm;align-items:start}
+  .rpt-side{display:grid;grid-template-columns:1fr 1.1fr;gap:3mm;align-items:start}
+}
+
+/* Screen helpers for the logo uploader (never printed). */
+.report-setup .logo-preview{
+  display:block;
+  width:100%;
+  max-width:180px;
+  max-height:44px;
+  object-fit:contain;
+  margin-top:8px;
+  background:var(--bg);
+  border:1px dashed var(--line-soft);
+  border-radius:8px;
+  padding:4px;
+}
+.sample-link-note{color:var(--green);font-weight:600}
+.sample-override input[type="checkbox"]{width:auto;margin-right:6px}

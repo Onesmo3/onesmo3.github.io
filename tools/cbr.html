@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="../assets/report.css">
 <style>
   :root{--bad:#ff6b6b}
   [data-theme="light"]{--bad:#c62828}
@@ -39,7 +40,6 @@
   .result .value .unit{font:600 .95rem/1 var(--body);color:var(--muted);margin-left:6px}
   .signatures{display:none}
   .remarks-out{display:none}
-  @page{size:A4 landscape;margin:10mm}
   @media print{
     #infoCard,#setupCard{display:none!important}
     #pointTable,#penTable{min-width:0}
@@ -106,8 +106,12 @@
         <div class="field"><label for="i-datePenetration">Date of penetration</label><input id="i-datePenetration" type="date" data-info="datePenetration"></div>
         <div class="field full"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-info="testMethod" placeholder="e.g. CML TEST 1.10, Ref. BS 1377: Part 4: 1990"></div>
         <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Optional remarks"></div>
+        <div class="field full sample-override"><label for="sampleOverride"><input id="sampleOverride" type="checkbox" data-sample-override> Override NMC sample details (edit the shared fields manually)</label></div>
+        <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
       </div>
     </div>
+
+    <div id="logoSetup"></div>
 
     <div class="tool stack" id="setupCard">
       <h3>2. Compaction targets and equipment</h3>
@@ -233,6 +237,8 @@
   </section>
 </main>
 
+<div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
 <footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
 
 <script src="../assets/shared.js"></script>
@@ -316,6 +322,27 @@
   }
 
   var state=defaultState(),lastResult=null,restored=false,suppressSave=false;
+  var SAMPLE_MAP={project:'project',location:'location',materialFor:'materialSource',materialFrom:'materialFrom',dateSampled:'dateSampled'};
+  var esc=function(v){return (TK?TK.escapeHTML:escapeHTML)(v)};
+
+  function applyLinkedSample(){
+    if(!TK)return;
+    var linked=state.info.sampleOverride!=='1';
+    var result=linked?TK.linkSample(state.info,state.info.sampleNo,SAMPLE_MAP):{record:null,linked:false};
+    if(result.linked&&result.record&&String(result.record.nmc||'')!=='')state.setup.nmc=String(result.record.nmc);
+    var note=el('sampleNote');
+    if(note)note.textContent=result.linked&&result.record
+      ? 'Shared sample details and NMC filled from NMC sample '+state.info.sampleNo+'. Uncheck override to re-link.'
+      : (state.info.sampleOverride==='1'?'Local override active — shared fields are editable.':'');
+    if(el('sampleOverride'))el('sampleOverride').checked=state.info.sampleOverride==='1';
+    ['project','location','materialSource','materialFrom','dateSampled'].forEach(function(k){
+      var input=document.querySelector('[data-info="'+k+'"]');
+      if(input)input.readOnly=result.linked&&!!result.record;
+    });
+    var nmc=document.querySelector('[data-setup="nmc"]');
+    if(nmc)nmc.readOnly=result.linked&&!!result.record&&String(result.record.nmc||'')!=='';
+  }
+
   var drawSoon=TK?TK.debounce(function(){drawAll(false);},120):function(){drawAll(false);};
   var saveSoon=TK?TK.debounce(saveNow,600):function(){};
 
@@ -395,6 +422,7 @@
     });
     if(el('trendBasis'))el('trendBasis').value=state.setup.trendBasis;
     updatePenNotes();
+    applyLinkedSample();
   }
 
   function buildPointTable(){
@@ -848,6 +876,104 @@
   }
 
   /* ---------- print + CSV ---------- */
+  function signBlock(){
+    var info=state.info,d=function(v){return TK?TK.dateDisplay(v):v};
+    var roles=[
+      ['Prepared by:',info.testedBy,'Assistant Materials Technician',d(info.dateCompaction)],
+      ['Checked by:',info.checkedBy,"Consultant's Materials Technician",d(info.dateCompaction)],
+      ['Verified by:',info.verifiedBy||info.checkedBy,"Consultant's Materials Engineer",d(info.datePenetration)]
+    ];
+    return '<div class=\"rpt-sign\">'+roles.map(function(x){
+      return '<div><div class=\"role\">'+x[0]+'</div><div class=\"line\">'+(x[3]?' '+esc(x[3]):'')+'</div><div>'+esc(x[1]||'')+'</div><div class=\"line\"></div><div class=\"title\">'+x[2]+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  function reportHead(page){
+    var info=state.info,dd=function(v){return TK?TK.dateDisplay(v):v};
+    var h=TK?TK.logoBand():'<div class=\"rpt-logos\"></div>';
+    h+='<div class=\"rpt-title\">PROJECT:  '+esc(info.project)+'\n<span class=\"main\">CALIFORNIA BEARING RATIO (CBR) TEST'+(page===2?' — SHEET 2':'')+'</span></div>';
+    h+='<table class=\"rpt rpt-kv\"><tbody>'+
+      '<tr><td class=\"lbl\">LOCATION:</td><td class=\"val\">'+esc(info.location)+'</td><td class=\"lbl2\">DATE SAMPLED:</td><td class=\"val2\">'+esc(dd(info.dateSampled))+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIAL FOR</td><td class=\"val\">'+esc(info.materialSource)+'</td><td class=\"lbl2\">DATE COMPACTION:</td><td class=\"val2\">'+esc(dd(info.dateCompaction))+'</td></tr>'+
+      '<tr><td class=\"lbl\">SAMPLE NO</td><td class=\"val\">'+esc(info.sampleNo)+'</td><td class=\"lbl2\">TECHNICIAN:</td><td class=\"val2\">'+esc(info.testedBy)+'</td></tr>'+
+      '<tr><td class=\"lbl\">MATERIAL FROM</td><td class=\"val\">'+esc(info.materialFrom)+'</td><td class=\"lbl2\">CHECKED BY:</td><td class=\"val2\">'+esc(info.checkedBy)+'</td></tr>'+
+      '</tbody></table>';
+    return h;
+  }
+
+  function pointRowsHtml(keys,r){
+    var h='<table class=\"rpt rpt-mini\"><thead><tr><th class=\"lbl\" style=\"width:43%\">Parameter</th>';
+    POINTS.forEach(function(p){h+='<th>Test '+p+'</th>'});
+    h+='</tr></thead><tbody>';
+    keys.forEach(function(key){
+      var meta=POINT_ROWS.filter(function(row){return row.key===key})[0]||{label:key,dec:2};
+      h+='<tr><td class=\"lbl\">'+esc(meta.label)+'</td>';
+      POINTS.forEach(function(p){
+        var v;
+        if(meta.calc)v=r.points[p]&&isFinite(r.points[p][key])?fmt(r.points[p][key],meta.dec):'';
+        else v=state.points[p][key]||'';
+        h+='<td class=\"right\">'+esc(v)+'</td>';
+      });
+      h+='</tr>';
+    });
+    return h+'</tbody></table>';
+  }
+
+  function buildReport(r){
+    var s=state.setup,info=state.info;
+    var cell=function(v,d){return (typeof v==='number'&&isFinite(v))?fmt(v,d):''};
+    var h='<div class="rpt-page">'+reportHead(1);
+    h+='<table class="rpt rpt-tight"><tbody>'+
+      '<tr><td class="lbl">TEST METHOD</td><td>'+esc(info.testMethod)+'</td><td class="lbl">COMPACTION</td><td>'+esc(s.compactionMethod)+'</td></tr>'+
+      '<tr><td class="lbl">TARGET MDD</td><td>'+cell(r.targetMdd,2)+' kg/m³</td><td class="lbl">TARGET OMC</td><td>'+cell(r.targetOmc,2)+' %</td></tr>'+
+      '<tr><td class="lbl">NMC</td><td>'+cell(r.nmc,2)+' %</td><td class="lbl">PROVING RING FACTOR</td><td>'+cell(r.prf,4)+' kN/div</td></tr>'+
+      '<tr><td class="lbl">PLUNGER AREA</td><td>'+esc(s.plungerArea)+' mm²</td><td class="lbl">WATER TO ADD</td><td>'+cell(r.waterAdd,1)+' ml/test</td></tr>'+
+      '</tbody></table>';
+    h+=pointRowsHtml(['mouldNo','volume','compaction','mouldWet','mouldMass','massSoil','wetDensity','containerNo','wetCont','dryCont','contMass','drySoil','water','preMc'],r);
+    h+='<table class="rpt rpt-mini"><thead><tr><th class="lbl">Penetration (mm)</th>';
+    POINTS.forEach(function(p){h+='<th colspan="2">Test '+p+'</th>'});
+    h+='</tr><tr><th></th>';
+    POINTS.forEach(function(p){h+='<th>Dial</th><th>Force kN</th>'});
+    h+='</tr></thead><tbody>';
+    PEN_STEPS.forEach(function(mm,i){
+      h+='<tr><td class="lbl">'+fmt(mm,1)+'</td>';
+      POINTS.forEach(function(p){
+        var dial=state.pen[p][i]||'';
+        h+='<td class="right">'+esc(dial)+'</td><td class="right">'+cell(penForce(p,i,r.prf),3)+'</td>';
+      });
+      h+='</tr>';
+    });
+    h+='</tbody></table>';
+    if(TK){
+      var pen=TK.canvasImage('penChart');
+      h+=pen?('<div class="rpt-chart rpt-chart--sm"><img src="'+pen+'" alt="Force penetration chart"></div>'):'<div class="rpt-chart-fallback">Penetration chart unavailable</div>';
+    }
+    h+='<p class="rpt-note">Continues on page 2 — soaked moisture, swell, CBR values and summary.</p></div>';
+
+    h+='<div class="rpt-page rpt-page--2">'+reportHead(2);
+    h+=pointRowsHtml(['soakContainerNo','soakWetCont','soakDryCont','soakContMass','soakMc','dryDensity','pctMdd','initialDial','finalDial','swell','cbr25','cbr50'],r);
+    if(TK){
+      var charts=[['swellChart','Swell chart'],['cbrDensityChart','CBR vs dry density'],['cbrCompactionChart','CBR vs compaction']];
+      h+='<div class="rpt-two-up">';
+      charts.forEach(function(c){
+        var src=TK.canvasImage(c[0]);
+        h+=src?('<div class="rpt-chart rpt-chart--sm"><img src="'+src+'" alt="'+c[1]+'"></div>'):'<div class="rpt-chart-fallback">'+c[1]+' unavailable</div>';
+      });
+      h+='</div>';
+    }
+    h+='<table class="rpt rpt-tight"><thead><tr><th>Density (% MDD)</th><th>Dry density (kg/m³)</th><th>CBR (%)</th></tr></thead><tbody>';
+    r.rows.forEach(function(row){
+      h+='<tr'+(row.pct===95?' class="rpt-section"':'')+'><td>'+row.pct+'%</td><td class="right">'+cell(row.density,2)+'</td><td class="right">'+cell(row.cbr,2)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    h+='<div class="rpt-callout"><div><span>CBR at 2.5 mm · Test A</span><b>'+cell(r.points.A.cbr25,2)+'</b><span>%</span></div>'+
+      '<div><span>CBR at 95% MDD ('+r.basis+' mm basis)</span><b>'+(r.cbr95!==null?cell(r.cbr95,2):'—')+'</b><span>%</span></div>'+
+      '<div><span>Water to add</span><b>'+cell(r.waterAdd,1)+'</b><span>ml/test</span></div></div>';
+    h+='<div class="rpt-remarks">Remarks: '+esc(info.remarks)+' <span class="rpt-dots"></span></div>';
+    h+=signBlock()+'</div>';
+    return h;
+  }
+
   function printSheet(){
     syncFromDom();
     var r=calc();
@@ -856,28 +982,9 @@
       el('message').textContent='Enter the target MDD, proving ring factor and CBR readings before printing the report.';
       return;
     }
-    var info=state.info,meta=[];
-    if(info.project)meta.push('Project: '+info.project);
-    if(info.location)meta.push('Location: '+info.location);
-    if(info.materialSource)meta.push('Material source: '+info.materialSource);
-    if(info.materialFrom)meta.push('Material from: '+info.materialFrom);
-    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
-    if(info.dateSampled)meta.push('Date sampled: '+info.dateSampled);
-    if(info.dateCompaction)meta.push('Date compacted: '+info.dateCompaction);
-    if(info.datePenetration)meta.push('Date penetrated: '+info.datePenetration);
-    if(state.info.testMethod)meta.push('Test method: '+info.testMethod);
-    if(state.setup.compactionMethod)meta.push('Compaction method: '+state.setup.compactionMethod);
-    if(isFinite(r.targetMdd))meta.push('Target MDD: '+fmt(r.targetMdd,0)+' kg/m³');
-    if(isFinite(r.targetOmc))meta.push('Target OMC: '+fmt(r.targetOmc,2)+' %');
-    if(isFinite(r.nmc))meta.push('NMC: '+fmt(r.nmc,2)+' %');
-    if(isFinite(r.prf))meta.push('Proving ring factor: '+fmt(r.prf,4)+' kN/division');
-    if(isFinite(r.waterAdd))meta.push('Water to add: '+fmt(r.waterAdd,1)+' ml per test');
-    if(r.cbr95!==null)meta.push('CBR at 95% MDD: '+fmt(r.cbr95,2)+' %');
-    if(info.remarks)meta.push('Remarks: '+info.remarks);
-    var title='California Bearing Ratio (CBR)'+(info.sampleNo?' — '+info.sampleNo:'');
     drawAll(true);
-    if(TK){TK.printReport({title:title,meta:meta});}
-    else{window.print();}
+    if(TK)TK.printSheet(buildReport(r));
+    else window.print();
     drawAll(false);
   }
 
@@ -939,7 +1046,12 @@
   function onInput(event){
     var t=event.target;
     if(!t||!t.getAttribute||t.tagName==='SELECT')return;
-    if(t.getAttribute('data-info')){state.info[t.getAttribute('data-info')]=t.value;syncSignatures();saveSoon();return;}
+    if(t.getAttribute('data-info')){
+      state.info[t.getAttribute('data-info')]=t.value;
+      syncSignatures();
+      if(TK&&t.getAttribute('data-info')==='sampleNo'){applyLinkedSample();syncInputs();calc();}
+      saveSoon();return;
+    }
     if(t.getAttribute('data-setup')){state.setup[t.getAttribute('data-setup')]=t.value;calc();saveSoon();return;}
     if(t.getAttribute('data-point')){state.points[t.getAttribute('data-point')][t.getAttribute('data-field')]=t.value;calc();saveSoon();return;}
     if(t.getAttribute('data-pen')){state.pen[t.getAttribute('data-pen')][Number(t.getAttribute('data-i'))]=t.value;calc();saveSoon();return;}
@@ -958,12 +1070,17 @@
     buildPointTable();
     buildPenTable();
     restore();
+    if(TK)TK.mountLogoSetup('logoSetup');
     syncInputs();
     calc();
     if(restored&&el('message'))el('message').textContent='Restored saved CBR sheet. '+el('message').textContent;
     drawAll(false);
     document.addEventListener('input',onInput);
     document.addEventListener('change',onChange);
+    if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
+      state.info.sampleOverride=this.checked?'1':'';
+      applyLinkedSample();syncInputs();calc();saveSoon();
+    });
     document.addEventListener('themechange',function(){drawAll(false);});
     window.addEventListener('afterprint',function(){drawAll(false);});
     window.addEventListener('resize',TK?TK.debounce(function(){drawAll(false);},180):function(){drawAll(false);});
