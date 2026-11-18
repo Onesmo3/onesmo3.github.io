@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#071a2f">
-<meta name="description" content="Concrete cube compressive strength calculator by MbiseCAD — KERBSTONE report sheet from Cubes Strength.xls, with 7 and 28 day cube sets, printable A4 report and CSV export.">
+<meta name="description" content="Concrete cube compressive strength calculator by MbiseCAD — KERBSTONE report sheet from Cubes Strength.xls, with adjustable 7 and 28 day cube counts, printable A4 report and CSV export.">
 <title>Cube Strength Calculator — MbiseCAD</title>
 <link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,6 +23,12 @@
   #cubeTable .out{font-weight:700;color:var(--text)}
   #cubeTable .age-row td{font-weight:700;background:rgba(127,127,127,.10)}
   #cubeTable .avg-row td{font-weight:700;border-top:2px solid var(--line-soft)}
+  #cubeTable .age-row .age-tools{float:right;display:inline-flex;gap:6px;align-items:center}
+  #cubeTable .age-row .age-tools .btn{padding:4px 9px;font-size:.8rem}
+  #cubeTable .cube-count{font-variant-numeric:tabular-nums;color:var(--text);margin-right:4px}
+  #cubeTable .cube-remove{margin-left:6px;padding:1px 7px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);font-size:1rem;line-height:1.3;cursor:pointer}
+  #cubeTable .cube-remove:hover:not(:disabled){border-color:var(--orange);color:var(--text)}
+  #cubeTable button:disabled{opacity:.4;cursor:not-allowed}
   .mix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
   .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
   @media(max-width:900px){.mix-grid,.summary-grid{grid-template-columns:1fr 1fr}}
@@ -46,7 +52,7 @@
     <div>
       <p class="eyebrow">Concrete Testing · KERBSTONE report sheet</p>
       <h1>Cube Compressive Strength</h1>
-      <p class="lead">Density, calibrated load and cube strength computed exactly as laid out on the KERBSTONE sheet in <em>New/Cubes Strength.xls</em> — three 7-day cubes and six 28-day cubes.</p>
+      <p class="lead">Density, calibrated load and cube strength computed exactly as laid out on the KERBSTONE sheet in <em>New/Cubes Strength.xls</em> — with an adjustable number of cubes in each set (defaults: 3 at 7 days, 6 at 28 days).</p>
     </div>
   </div>
 
@@ -101,7 +107,7 @@
     <div class="tool-head">
       <div>
         <h3>2. Cube results</h3>
-        <p class="hint">Density = mass ÷ cube volume × 1000; corrected load = load × calibration coefficient; strength = corrected load ÷ cube factor (22.5 for a 150 mm cube).</p>
+        <p class="hint">Use <strong>+ Add cube</strong> / <strong>− Remove</strong> in each age row (or <strong>×</strong> on a single cube) to change the number of cubes — 1 to 24 per set. Density = mass ÷ cube volume × 1000; corrected load = load × calibration coefficient; strength = corrected load ÷ cube factor (22.5 for a 150 mm cube).</p>
       </div>
       <div class="actions">
         <button class="btn" id="btnPrint" type="button">Print A4 report</button>
@@ -166,6 +172,7 @@
     };
   }
 
+  var MIN_CUBES=1,MAX_CUBES=24;
   var state=defaultState(),restored=false,lastResult=null;
   var saveSoon=TK?TK.debounce(function(){saveNow()},450):function(){saveNow()};
 
@@ -178,11 +185,15 @@
             if(!base.groups[i])return;
             if(g&&typeof g==='object'){
               if(typeof g.label==='string')base.groups[i].label=g.label;
-              if(Array.isArray(g.cubes))g.cubes.forEach(function(c,j){
-                if(base.groups[i].cubes[j]&&c&&typeof c==='object'){
-                  Object.keys(base.groups[i].cubes[j]).forEach(function(f){base.groups[i].cubes[j][f]=clean(c[f])});
-                }
-              });
+              if(Array.isArray(g.cubes)){
+                /* Keep the saved cube count (not the default 3 / 6). */
+                base.groups[i].cubes=g.cubes.slice(0,MAX_CUBES).map(function(c,j){
+                  var cube=blankCube(String(j+1));
+                  if(c&&typeof c==='object')Object.keys(cube).forEach(function(f){cube[f]=clean(c[f])});
+                  return cube;
+                });
+                if(!base.groups[i].cubes.length)base.groups[i].cubes=[blankCube('1')];
+              }
             }
           });
         }
@@ -239,10 +250,15 @@
     var body=el('cubeBody');if(!body)return;
     var h='';
     state.groups.forEach(function(group,gi){
-      h+='<tr class="age-row"><td colspan="12">Age / set label <input type="text" data-group-label="'+gi+'" value="'+esc(group.label)+'" aria-label="Age of cube set '+(gi+1)+'"></td></tr>';
+      h+='<tr class="age-row"><td colspan="12"><span>Age / set label <input type="text" data-group-label="'+gi+'" value="'+esc(group.label)+'" aria-label="Age of cube set '+(gi+1)+'"></span>'+
+        '<span class="age-tools"><span class="cube-count">Cubes: '+group.cubes.length+'</span>'+
+        '<button type="button" class="btn small ghost" data-act="add-cube" data-group="'+gi+'" title="Add a cube to '+esc(group.label)+'"'+(group.cubes.length>=MAX_CUBES?' disabled':'')+'>+ Add cube</button>'+
+        '<button type="button" class="btn small ghost" data-act="remove-cube" data-group="'+gi+'" data-last="1" title="Remove the last cube from '+esc(group.label)+'"'+(group.cubes.length<=MIN_CUBES?' disabled':'')+'>− Remove</button>'+
+        '</span></td></tr>';
       group.cubes.forEach(function(cube,ci){
         h+='<tr>';
-        h+='<td><input type="text" data-group="'+gi+'" data-cube="'+ci+'" data-field="mark" value="'+esc(cube.mark)+'" aria-label="Cube marking"></td>';
+        h+='<td><input type="text" data-group="'+gi+'" data-cube="'+ci+'" data-field="mark" value="'+esc(cube.mark)+'" aria-label="Cube marking">'+
+          '<button type="button" class="cube-remove" data-act="remove-cube" data-group="'+gi+'" data-remove-cube="'+ci+'" title="Remove this cube" aria-label="Remove cube '+(ci+1)+'"'+(group.cubes.length<=MIN_CUBES?' disabled':'')+'>×</button></td>';
         h+='<td><input type="number" step="any" data-group="'+gi+'" data-cube="'+ci+'" data-field="mass" value="'+esc(cube.mass)+'" aria-label="Mass of cube"></td>';
         h+='<td class="num out" data-out="density" data-group="'+gi+'" data-cube="'+ci+'">—</td>';
         h+='<td class="num"><span data-out="volume" data-group="'+gi+'" data-cube="'+ci+'">'+esc(state.info.volume)+'</span></td>';
@@ -257,9 +273,29 @@
         h+='</tr>';
       });
       h+='<tr class="avg-row"><td colspan="10">AV — '+esc(group.label)+'</td><td class="num" data-out="avg" data-group="'+gi+'">—</td>'+
-        '<td class="num" data-out="avgDensity" data-group="'+gi+'">—</td><td></td></tr>';
+        '<td class="num" data-out="avgDensity" data-group="'+gi+'">—</td></tr>';
     });
     body.innerHTML=h;
+  }
+
+  function renumberMarks(group){
+    group.cubes.forEach(function(c,i){if(/^\d+$/.test(String(c.mark)))c.mark=String(i+1)});
+  }
+
+  function changeCubes(gi,ci,delta){
+    var group=state.groups[gi],msg=el('message');if(!group)return;
+    if(delta>0){
+      if(group.cubes.length>=MAX_CUBES){if(msg)msg.textContent='Maximum '+MAX_CUBES+' cubes per set.';return}
+      group.cubes.push(blankCube(String(group.cubes.length+1)));
+      if(msg)msg.textContent='Added a cube to '+group.label+'.';
+    }else{
+      if(group.cubes.length<=MIN_CUBES){if(msg)msg.textContent='Each set must keep at least '+MIN_CUBES+' cube.';return}
+      if(ci==null||ci<0||ci>=group.cubes.length)ci=group.cubes.length-1;
+      group.cubes.splice(ci,1);
+      renumberMarks(group);
+      if(msg)msg.textContent='Removed a cube from '+group.label+'.';
+    }
+    renderTable();calc();saveNow();
   }
 
   function calc(){
@@ -424,6 +460,14 @@
         state.groups[g].cubes[c][t.dataset.field]=t.value;
         calc();saveSoon();return;
       }
+    });
+    document.addEventListener('click',function(e){
+      var t=e.target;if(!t||!t.dataset)return;
+      var btn=t.closest?t.closest('button[data-act]'):(t.tagName==='BUTTON'?t:null);
+      if(!btn||btn.dataset.act===undefined)return;
+      var gi=Number(btn.dataset.group);
+      if(btn.dataset.act==='add-cube')changeCubes(gi,null,1);
+      else if(btn.dataset.act==='remove-cube')changeCubes(gi,btn.dataset.removeCube===undefined?null:Number(btn.dataset.removeCube),-1);
     });
     if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
       state.info.sampleOverride=this.checked?'1':'';
