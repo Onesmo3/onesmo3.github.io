@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071a2f">
+<meta name="description" content="Aggregate grading and fineness modulus calculator by MbiseCAD — fine, all-in and 0–5 mm aggregate sieve reports from the lab sheets, with printable A4 report and CSV export.">
+<title>Aggregate Grading — MbiseCAD</title>
+<link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="../assets/report.css">
+<style>
+  @page{size:A4 landscape;margin:6mm 8mm}
+  .field.full{grid-column:1 / -1}
+  #gradeTable{min-width:1080px}
+  #gradeTable td,#gradeTable th{padding:7px 8px;vertical-align:middle}
+  #gradeTable td.lbl{white-space:nowrap;color:var(--muted);font-weight:600}
+  #gradeTable .num{text-align:right;font-variant-numeric:tabular-nums}
+  #gradeTable .out{font-weight:700;color:var(--text)}
+  #gradeTable .total-row td{font-weight:700;border-top:2px solid var(--line-soft)}
+  #gradeTable .fm-row td{font-weight:700;background:rgba(127,127,127,.10)}
+  .ok{color:var(--ok,#2e7d32);font-weight:700}
+  .out-of-spec{color:var(--bad,#c62828);font-weight:700}
+  .sample-override label{display:flex;align-items:center;gap:8px}
+  .sample-override input{width:auto;margin:0}
+</style>
+<script>
+  try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
+</script>
+</head>
+<body>
+
+<header class="topbar"><div class="wrap"><nav>
+  <a class="brand" href="../index.html"><img class="logo" src="../icons/mbisecad-mark.png" alt=""><span>MbiseCAD</span></a>
+  <div class="navright">
+    <a class="navlink" href="../civil-lab-tools.html">← Civil Lab Tools</a>
+    <button class="theme" id="themeBtn" type="button" aria-label="Switch colour theme">☀️ Light</button>
+  </div>
+</nav></div></header>
+
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">Aggregate Testing · Lab report sheets</p>
+      <h1>Aggregate Grading</h1>
+      <p class="lead">Sieve analysis and fineness modulus for fine, all-in and 0–5 mm aggregates using the laboratory sheet layouts and specification limits.</p>
+    </div>
+  </div>
+
+  <section class="tool" id="infoCard">
+    <h3>1. Test information</h3>
+    <div class="fields mt">
+      <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
+      <div class="field"><label for="i-client">Client</label><input id="i-client" type="text" data-info="client" placeholder="e.g. TANROADS"></div>
+      <div class="field"><label for="i-contractor">Contractor</label><input id="i-contractor" type="text" data-info="contractor" placeholder="Contractor"></div>
+      <div class="field"><label for="i-consultant">Consultant</label><input id="i-consultant" type="text" data-info="consultant" placeholder="Consultant"></div>
+      <div class="field"><label for="i-mode">Report sheet</label>
+        <select id="i-mode" data-info="mode">
+          <option value="fine">Fine aggregate — washed / unwashed</option>
+          <option value="allin">All-in aggregate — BS 882 Table 5</option>
+          <option value="fine05">0–5 mm fine aggregate — BS 882</option>
+        </select>
+      </div>
+      <div class="field"><label for="i-washed">Fine condition</label>
+        <select id="i-washed" data-info="washed">
+          <option value="washed">Washed</option>
+          <option value="unwashed">Un-washed</option>
+        </select>
+      </div>
+      <div class="field"><label for="i-sampleNo">Sample no.</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/001"></div>
+      <div class="field"><label for="i-location">Sampling location</label><input id="i-location" type="text" data-info="location" placeholder="e.g. Camp CR 15"></div>
+      <div class="field"><label for="i-offset">Offset</label><input id="i-offset" type="text" data-info="offset" placeholder="e.g. LHS"></div>
+      <div class="field"><label for="i-depth">Depth / layer</label><input id="i-depth" type="text" data-info="depth" placeholder="e.g. 0–300 mm"></div>
+      <div class="field"><label for="i-materialFrom">Source of sample</label><input id="i-materialFrom" type="text" data-info="materialFrom" placeholder="e.g. Kibirizi"></div>
+      <div class="field"><label for="i-materialFor">Purpose / material for</label><input id="i-materialFor" type="text" data-info="materialFor" placeholder="e.g. Concrete"></div>
+      <div class="field"><label for="i-materialType">Type of material</label><input id="i-materialType" type="text" data-info="materialType" placeholder="e.g. Natural sand"></div>
+      <div class="field"><label for="i-size">Size of aggregates</label><input id="i-size" type="text" data-info="size" placeholder="e.g. 0–20 mm"></div>
+      <div class="field"><label for="i-dateSampled">Date sampled</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
+      <div class="field"><label for="i-dateTested">Date tested</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
+      <div class="field"><label for="i-testedBy">Tested by / operator</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
+      <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+      <div class="field"><label for="i-approvedBy">Approved by</label><input id="i-approvedBy" type="text" data-info="approvedBy" placeholder="Name"></div>
+      <div class="field"><label for="i-initialMass">Initial dry mass (g)</label><input id="i-initialMass" type="number" step="any" data-info="initialMass" placeholder="2475.8"></div>
+      <div class="field"><label for="i-afterWash">Mass after washing &gt;75 µm (g)</label><input id="i-afterWash" type="number" step="any" data-info="afterWash" placeholder="Optional"></div>
+      <div class="field"><label for="i-passing75">Total passing 0.075 mm (g)</label><input id="i-passing75" type="number" step="any" data-info="passing75" placeholder="Pan / passing 75 µm"></div>
+      <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Optional remarks"></div>
+      <div class="field full sample-override"><label for="sampleOverride"><input id="sampleOverride" type="checkbox" data-sample-override> Override NMC sample details (edit the shared fields manually)</label></div>
+      <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
+    </div>
+  </section>
+
+  <div id="logoSetup"></div>
+
+  <section class="tool mt">
+    <div class="tool-head">
+      <div>
+        <h3>2. Sieve results</h3>
+        <p class="hint" id="methodHint">Percentages use the initial dry mass. Fineness Modulus follows the selected report sheet.</p>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnPrint" type="button">Print A4 report</button>
+        <button class="btn secondary" id="btnCsv" type="button">Export CSV</button>
+        <button class="btn ghost" id="btnReset" type="button">Reset</button>
+      </div>
+    </div>
+    <p class="hint" id="message"></p>
+    <div class="table-scroll mt">
+      <table id="gradeTable">
+        <thead><tr><th colspan="2">Sieve size</th><th>Mass retained (g)</th><th>% retained</th><th>Cumulative % retained</th><th>Cumulative % passing</th><th>Specification limits (% passing)</th></tr></thead>
+        <tbody id="gradeBody"></tbody>
+      </table>
+    </div>
+    <div class="notice"><strong>Engineering note:</strong> This calculator reproduces the arithmetic and layout of the laboratory sheet. Confirm the grading envelope, fineness modulus target and acceptance limits against the project specification.</div>
+  </section>
+</main>
+
+<div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
+<footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
+
+<script src="../assets/shared.js"></script>
+<script src="../assets/tool-kit.js"></script>
+<script>
+(function(){
+  'use strict';
+  var TK=window.MbiseTool||null;
+  var SAMPLE_MAP={project:'project',location:'location',materialFor:'materialFor',materialFrom:'materialFrom',dateSampled:'dateSampled'};
+  var MODES={
+    fine:{
+      title:'SIEVE ANALYSIS OF FINE AGGREGATES (FOR CONCRETE)',
+      method:'CML TEST 2.3; BS 812 - 103.1: 1985',
+      fmIndices:[4,5,6,7,8,9,10],
+      sieves:[
+        {label:'1½"',mm:'37.5'},{label:'1⅛"',mm:'28'},{label:'¾"',mm:'20'},{label:'',mm:'14'},
+        {label:'⅜"',mm:'10'},{label:'No. 4',mm:'5',low:89,high:100},{label:'No. 8',mm:'2.36',low:60,high:100},
+        {label:'No. 16',mm:'1.18',low:30,high:100},{label:'No. 30',mm:'0.6',low:15,high:100},
+        {label:'No. 50',mm:'0.3',low:5,high:70},{label:'No. 100',mm:'0.15',low:0,high:15},{label:'No. 200',mm:'0.075'}
+      ]
+    },
+    allin:{
+      title:'SIEVE ANALYSIS OF ALL IN AGGREGATES (FOR CONCRETE)',
+      method:'BS 882 : 1992. Table 5',
+      fmIndices:[2,4,5,6,7,8,9,10],
+      pan:true,
+      sieves:[
+        {label:'',mm:'50',low:100,high:100},{label:'',mm:'37.5',low:100,high:100},
+        {label:'¾"',mm:'20',low:95,high:100},{label:'',mm:'14'},
+        {label:'⅜"',mm:'10',low:35,high:55},{label:'No. 4',mm:'5'},
+        {label:'No. 8',mm:'2.36'},{label:'No. 16',mm:'1.18'},
+        {label:'No. 30',mm:'0.6',low:10,high:35},{label:'No. 50',mm:'0.3'},
+        {label:'No. 100',mm:'0.15'},{label:'No. 200',mm:'0.075'}
+      ]
+    },
+    fine05:{
+      title:'DETERMINATION OF PARTICLE SIZE DISTRIBUTION',
+      method:'BS 812: Section 103.1: 1992 · Specified limits BS 882:1992',
+      fmIndices:[0,1,2,3,4,5,6],
+      pan:false,
+      sieves:[
+        {label:'',mm:'10',low:100,high:100},{label:'',mm:'5',low:89,high:100},
+        {label:'',mm:'2.36',low:60,high:100},{label:'',mm:'1.18',low:30,high:100},
+        {label:'',mm:'0.6',low:15,high:100},{label:'',mm:'0.3',low:5,high:70},{label:'',mm:'0.15',low:0,high:20}
+      ]
+    }
+  };
+  function escapeHTML(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+  var esc=function(v){return (TK?TK.escapeHTML:escapeHTML)(v)};
+  var fmt=function(v,d){return (TK?TK.fmt:function(x,n){return (Math.round(Number(x)*Math.pow(10,n))/Math.pow(10,n)).toFixed(n)})(v,d)};
+  var el=function(id){return document.getElementById(id)};
+  function num(v){if(v==null||String(v).trim()==='')return NaN;var n=Number(v);return isFinite(n)?n:NaN}
+  function clean(v){return v==null?'':String(v)}
+  function todayISO(){var d=new Date(),p=function(n){return n<10?'0'+n:''+n};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+  function mode(){return MODES[state.info.mode]?state.info.mode:'fine'}
+  function cfg(){return MODES[mode()]}
+  function masses(){var k=mode();if(!state.massesByMode[k])state.massesByMode[k]=cfg().sieves.map(function(){return ''});return state.massesByMode[k]}
+  function defaultState(){
+    return {
+      info:{project:'',client:'',contractor:'',consultant:'',mode:'fine',washed:'washed',sampleNo:'',location:'',offset:'',depth:'',
+        materialFrom:'',materialFor:'',materialType:'',size:'',dateSampled:'',dateTested:todayISO(),testedBy:'',checkedBy:'',approvedBy:'',
+        initialMass:'',afterWash:'',passing75:'',remarks:''},
+      massesByMode:{fine:MODES.fine.sieves.map(function(){return ''}),allin:MODES.allin.sieves.map(function(){return ''}),fine05:MODES.fine05.sieves.map(function(){return ''})}
+    };
+  }
+  var state=defaultState(),restored=false,lastResult=null;
+  var saveSoon=TK?TK.debounce(function(){saveNow()},450):function(){saveNow()};
+  function merge(base,saved){
+    if(!saved||typeof saved!=='object')return base;
+    if(saved.info&&typeof saved.info==='object')Object.keys(base.info).forEach(function(k){if(saved.info[k]!=null)base.info[k]=clean(saved.info[k])});
+    if(saved.massesByMode&&typeof saved.massesByMode==='object'){
+      Object.keys(base.massesByMode).forEach(function(k){
+        if(Array.isArray(saved.massesByMode[k]))saved.massesByMode[k].forEach(function(v,i){if(i<base.massesByMode[k].length)base.massesByMode[k][i]=clean(v)});
+      });
+    }
+    return base;
+  }
+  function restore(){if(!TK)return;var saved=TK.store('aggregate-grading').load(null);if(saved){state=merge(defaultState(),saved);restored=true}}
+  function saveNow(){if(!TK)return;var ok=TK.store('aggregate-grading').save(state);var msg=el('message');if(msg)msg.textContent=ok?'Saved in this browser.':'Browser storage is full — export a CSV backup.'}
+
+  function applyLinkedSample(){
+    if(!TK)return;
+    var linked=state.info.sampleOverride!=='1';
+    var result=linked?TK.linkSample(state.info,state.info.sampleNo,SAMPLE_MAP):{record:null,linked:false};
+    var note=el('sampleNote');
+    if(note)note.textContent=result.linked&&result.record
+      ? 'Shared sample details filled from NMC sample '+state.info.sampleNo+'. Uncheck override to re-link.'
+      : (state.info.sampleOverride==='1'?'Local override active — shared fields are editable.':'');
+    if(el('sampleOverride'))el('sampleOverride').checked=state.info.sampleOverride==='1';
+    ['project','location','materialFor','materialFrom','dateSampled'].forEach(function(k){
+      var input=document.querySelector('[data-info="'+k+'"]');
+      if(input)input.readOnly=result.linked&&!!result.record;
+    });
+  }
+  function syncInputs(){
+    document.querySelectorAll('[data-info]').forEach(function(input){input.value=clean(state.info[input.dataset.info])});
+    renderTable();
+    applyLinkedSample();
+    calc();
+  }
+
+  function specText(row,passing){
+    if(row.low==null&&row.high==null)return '';
+    var s=row.low==null?('≤ '+fmt(row.high,0)):(row.high==null?('≥ '+fmt(row.low,0)):(fmt(row.low,0)+' – '+fmt(row.high,0)));
+    if(!isFinite(passing))return s;
+    var ok=passing>=row.low-0.0001&&passing<=row.high+0.0001;
+    return s+' <span class="'+(ok?'ok':'out-of-spec')+'">'+(ok?'✓':'✗')+'</span>';
+  }
+
+  function renderTable(){
+    var body=el('gradeBody');if(!body)return;
+    var c=cfg(),ms=masses();
+    var h='';
+    c.sieves.forEach(function(row,i){
+      h+='<tr><td class="lbl">'+esc(row.label)+'</td><td class="num">'+esc(row.mm)+'</td>'+
+        '<td><input type="number" step="any" data-mass-index="'+i+'" value="'+esc(ms[i])+'" aria-label="Mass retained on '+esc(row.mm)+' mm"></td>'+
+        '<td class="num out" data-out="pret" data-index="'+i+'">—</td>'+
+        '<td class="num out" data-out="cret" data-index="'+i+'">—</td>'+
+        '<td class="num out" data-out="cpass" data-index="'+i+'">—</td>'+
+        '<td class="num" data-out="spec" data-index="'+i+'">'+specText(row,NaN)+'</td></tr>';
+    });
+    if(c.pan){
+      h+='<tr class="total-row"><td class="lbl" colspan="2">Total passing 0.075 mm</td>'+
+        '<td><input type="number" step="any" data-info="passing75" value="'+esc(state.info.passing75)+'" aria-label="Total passing 0.075 mm"></td>'+
+        '<td colspan="2"></td><td class="num out" data-out="pan-pass">0.00</td><td></td></tr>';
+    }
+    h+='<tr class="fm-row"><td class="lbl" colspan="4">Fineness Modulus, FM</td><td class="num out" colspan="3" data-out="fm">—</td></tr>';
+    body.innerHTML=h;
+    var hint=el('methodHint');if(hint)hint.textContent='Test method: '+c.method+'. Percentages use the initial dry mass. Fineness Modulus follows the selected report sheet.';
+  }
+
+  function calc(){
+    var c=cfg(),ms=masses(),M=num(state.info.initialMass),cum=0;
+    var rows=c.sieves.map(function(row,i){
+      var m=num(ms[i]);
+      var pret=isFinite(m)&&isFinite(M)&&M>0?(m/M*100):NaN;
+      var cret=isFinite(pret)?cum+pret:NaN;
+      if(isFinite(pret))cum+=pret;
+      var cpass=isFinite(cret)?100-cret:NaN;
+      return {label:row.label,mm:row.mm,mass:ms[i],mval:m,pret:pret,cret:cret,cpass:cpass,low:row.low,high:row.high};
+    });
+    var pan=num(state.info.passing75);
+    var fmSum=0,fmOk=true;
+    c.fmIndices.forEach(function(ix){if(rows[ix]&&isFinite(rows[ix].cret))fmSum+=rows[ix].cret;else fmOk=false});
+    var fm=fmOk?fmSum/100:NaN;
+    lastResult={rows:rows,cfg:c,initialMass:M,afterWash:num(state.info.afterWash),pan:pan,fm:fm,mode:mode(),washed:state.info.washed};
+
+    rows.forEach(function(r,i){
+      var p=el('gradeBody').querySelector('[data-out="pret"][data-index="'+i+'"]'); if(p)p.textContent=isFinite(r.pret)?fmt(r.pret,4):'—';
+      var cr=el('gradeBody').querySelector('[data-out="cret"][data-index="'+i+'"]'); if(cr)cr.textContent=isFinite(r.cret)?fmt(r.cret,4):'—';
+      var cp=el('gradeBody').querySelector('[data-out="cpass"][data-index="'+i+'"]'); if(cp)cp.textContent=isFinite(r.cpass)?fmt(r.cpass,4):'—';
+      var sp=el('gradeBody').querySelector('[data-out="spec"][data-index="'+i+'"]'); if(sp)sp.innerHTML=specText(r,r.cpass);
+    });
+    var panOut=el('gradeBody').querySelector('[data-out="pan-pass"]');
+    if(panOut){ var pval=isFinite(pan)&&isFinite(M)&&M>0?(pan/M*100):0; panOut.textContent=fmt(pval,2); }
+    var fmOut=el('gradeBody').querySelector('[data-out="fm"]');
+    if(fmOut)fmOut.textContent=isFinite(fm)?fmt(fm,4):'—';
+    return lastResult;
+  }
+
+  function signBlock(){
+    var info=state.info,dd=function(v){return TK?TK.dateDisplay(v):v};
+    var roles=mode()==='allin'||mode()==='fine05'
+      ? [
+          ["CONTRACTOR'S REPRESENTATIVE",'Lab Technician',info.testedBy,dd(info.dateTested)],
+          ["CONTRACTOR'S REPRESENTATIVE",'Material Eng',info.checkedBy,dd(info.dateTested)],
+          ["CONSULTANT'S REPRESENTATIVE",'Lab Technician',info.testedBy,dd(info.dateTested)],
+          ["CONSULTANT'S REPRESENTATIVE",'Material Eng',info.approvedBy,dd(info.dateTested)]
+        ]
+      : [
+          ['Analyst (SIETCO)','Analyst',info.testedBy,dd(info.dateTested)],
+          ['Lab Technician (Consultant)','Lab Technician',info.testedBy,dd(info.dateTested)],
+          ['Checked by — Q.C Manager (SIETCO)','Q.C Manager',info.checkedBy,dd(info.dateTested)],
+          ['Approved by — Materials Engineer (Consultant)','Materials Engineer',info.approvedBy,dd(info.dateTested)]
+        ];
+    return '<div class="rpt-sign rpt-sign--4">'+roles.map(function(x){
+      return '<div><div class="role">'+x[0]+'</div><div class="line">'+(x[3]?' '+esc(x[3]):'')+'</div><div>'+esc(x[2]||'')+'</div><div class="title">'+esc(x[1])+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  function buildReport(){
+    var r=calc(),info=state.info,c=cfg(),dd=function(v){return TK?TK.dateDisplay(v):v},val=function(v){return esc(v==null?'':v)};
+    var n=function(v,d){return isFinite(v)?fmt(v,d==null?2:d):''};
+    var title=c.title+(mode()==='fine'?' ('+(info.washed==='unwashed'?'UN-WASHED':'WASHED')+')':'');
+    var h=TK?TK.logoBand():'<div class="rpt-logos"></div>';
+    h+='<div class="rpt-title">PROJECT:  '+val(info.project)+'\n<span class="main">'+val(title)+'</span></div>';
+    h+='<table class="rpt rpt-kv"><tbody>'+
+      '<tr><td class="lbl">CLIENT:</td><td class="val">'+val(info.client)+'</td><td class="lbl2">CONTRACTOR:</td><td class="val2">'+val(info.contractor)+'</td></tr>'+
+      '<tr><td class="lbl">CONSULTANT:</td><td class="val">'+val(info.consultant)+'</td><td class="lbl2">SAMPLE NO.:</td><td class="val2">'+val(info.sampleNo)+'</td></tr>'+
+      '<tr><td class="lbl">SAMPLING LOCATION:</td><td class="val">'+val(info.location)+'</td><td class="lbl2">DATE SAMPLED:</td><td class="val2">'+val(dd(info.dateSampled))+'</td></tr>'+
+      '<tr><td class="lbl">SOURCE OF SAMPLE:</td><td class="val">'+val(info.materialFrom)+'</td><td class="lbl2">DATE TESTED:</td><td class="val2">'+val(dd(info.dateTested))+'</td></tr>'+
+      '<tr><td class="lbl">MATERIAL FOR:</td><td class="val">'+val(info.materialFor)+'</td><td class="lbl2">TYPE / SIZE:</td><td class="val2">'+val(info.materialType)+(info.size?' '+val(info.size):'')+'</td></tr>'+
+      '</tbody></table>';
+    h+='<table class="rpt rpt-tight"><tbody><tr><td class="lbl">TEST METHOD: '+val(c.method)+'</td></tr>'+
+      '<tr><td class="lbl">INITIAL DRY MASS: '+val(info.initialMass)+' g</td><td class="lbl">MASS AFTER WASHING (>75 µm): '+val(info.afterWash)+' g</td><td class="lbl">TOTAL PASSING 0.075 mm: '+val(info.passing75)+' g</td></tr>'+
+      '</tbody></table>';
+    h+='<table class="rpt rpt-mini"><thead><tr><th>Sieve size</th><th>(mm)</th><th>Mass retained (g)</th><th>% retained</th><th>Cumulative % retained</th><th>Cumulative % passing</th><th>Specification limits (% passing)</th></tr></thead><tbody>';
+    r.rows.forEach(function(row){
+      var lim=(row.low==null&&row.high==null)?'':(row.low==null?('≤ '+fmt(row.high,0)):(row.high==null?('≥ '+fmt(row.low,0)):(fmt(row.low,0)+' – '+fmt(row.high,0))));
+      h+='<tr><td class="lbl">'+val(row.label)+'</td><td class="right">'+val(row.mm)+'</td><td class="right">'+val(row.mass)+'</td><td class="right">'+n(row.pret,4)+'</td><td class="right">'+n(row.cret,4)+'</td><td class="right">'+n(row.cpass,4)+'</td><td class="right">'+lim+'</td></tr>';
+    });
+    if(c.pan){
+      var pval=isFinite(r.pan)&&isFinite(r.initialMass)&&r.initialMass>0?(r.pan/r.initialMass*100):0;
+      h+='<tr><td class="lbl" colspan="2">Total passing 0.075 mm</td><td class="right">'+val(info.passing75)+'</td><td></td><td></td><td class="right">'+fmt(pval,2)+'</td><td></td></tr>';
+    }
+    h+='<tr class="rpt-section"><td class="lbl" colspan="4">Fineness Modulus, FM</td><td class="right" colspan="3">'+n(r.fm,4)+'</td></tr>';
+    h+='</tbody></table>';
+    h+='<div class="rpt-remarks">Remarks: '+val(info.remarks)+' <span class="rpt-dots"></span></div>';
+    h+=signBlock();
+    return h;
+  }
+
+  function printSheet(){
+    var r=calc();
+    if(!isFinite(r.initialMass)||r.initialMass<=0){el('message').textContent='Enter the initial dry mass before printing the report.';return}
+    if(TK)TK.printSheet(buildReport()); else window.print();
+  }
+
+  function exportCsv(){
+    var r=calc(),rows=[['PROJECT',state.info.project],['REPORT',cfg().title],['SAMPLE NO',state.info.sampleNo],['DATE TESTED',state.info.dateTested],['INITIAL DRY MASS (g)',state.info.initialMass],[],
+      ['SIEVE','MM','MASS RETAINED (g)','% RETAINED','CUMULATIVE % RETAINED','CUMULATIVE % PASSING']];
+    r.rows.forEach(function(row){rows.push([row.label,row.mm,row.mass,isFinite(row.pret)?fmt(row.pret,4):'',isFinite(row.cret)?fmt(row.cret,4):'',isFinite(row.cpass)?fmt(row.cpass,4):''])});
+    if(cfg().pan)rows.push(['Total passing 0.075 mm','',state.info.passing75,'','','','']);
+    rows.push(['Fineness Modulus','','','',isFinite(r.fm)?fmt(r.fm,4):'','']);
+    if(TK)TK.exportCSV('aggregate-grading-'+TK.fileStamp()+'.csv',rows);
+  }
+
+  function resetAll(){
+    if(!window.confirm('Reset all aggregate grading entries in this browser?'))return;
+    if(TK)TK.store('aggregate-grading').clear();
+    state=defaultState();syncInputs();saveNow();
+    el('message').textContent='Aggregate grading sheet reset.';
+  }
+
+  function init(){
+    restore();
+    if(TK)TK.mountLogoSetup('logoSetup');
+    syncInputs();
+    if(restored)el('message').textContent='Restored your saved aggregate grading sheet from this browser.';
+
+    document.addEventListener('input',function(e){
+      var t=e.target;if(!t||!t.dataset)return;
+      if(t.dataset.massIndex!==undefined){masses()[Number(t.dataset.massIndex)]=t.value;calc();saveSoon();return}
+      if(t.dataset.info){
+        state.info[t.dataset.info]=t.value;
+        if(TK&&t.dataset.info==='sampleNo'){applyLinkedSample();syncInputs()}
+        else if(t.dataset.info==='mode'){syncInputs()}
+        else calc();
+        saveSoon();return;
+      }
+    });
+    document.addEventListener('change',function(e){
+      var t=e.target;if(!t||!t.dataset)return;
+      if(t.dataset.info==='mode'||t.dataset.info==='washed'){state.info[t.dataset.info]=t.value;syncInputs();saveSoon()}
+    });
+    if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
+      state.info.sampleOverride=this.checked?'1':'';
+      applyLinkedSample();syncInputs();saveSoon();
+    });
+    window.addEventListener('beforeunload',saveNow);
+    if(el('btnPrint'))el('btnPrint').addEventListener('click',printSheet);
+    if(el('btnCsv'))el('btnCsv').addEventListener('click',exportCsv);
+    if(el('btnReset'))el('btnReset').addEventListener('click',resetAll);
+    if(el('year'))el('year').textContent=new Date().getFullYear();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
