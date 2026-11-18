@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071a2f">
+<meta name="description" content="Atterberg limits calculator by MbiseCAD — liquid limit from cone penetration, plastic limit, plasticity index, linear shrinkage and shrinkage product.">
+<title>Atterberg Limits Calculator — MbiseCAD</title>
+<link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/shared.css">
+<style>
+  :root{--bad:#ff6b6b}
+  [data-theme="light"]{--bad:#c62828}
+  #llTable{min-width:880px}
+  #plTable{min-width:680px}
+  #llTable td.lbl,#plTable td.lbl{white-space:nowrap;color:var(--muted);font-weight:600}
+  #llTable td,#plTable td{padding:7px 9px;vertical-align:middle}
+  #llTable th,#plTable th{padding:9px 9px}
+  #llTable input,#plTable input{padding:7px 8px;border-radius:8px}
+  #llTable .num,#plTable .num{text-align:right;font-variant-numeric:tabular-nums}
+  #llTable .calc-val,#plTable .calc-val{font-weight:600;color:var(--text)}
+  .fields.compact{gap:11px}
+  .result .value .unit{font:600 .9rem/1 var(--body);color:var(--muted);margin-left:5px}
+  #llChart{height:320px}
+  .bad-text{color:var(--bad)}
+  .signatures{display:none}
+  .remarks-out{display:none}
+  @page{size:A4 landscape;margin:10mm}
+  @media print{
+    #infoCard{display:none!important}
+    #llTable,#plTable{min-width:0}
+    #llTable th,#llTable td,#plTable th,#plTable td{padding:3px 4px;font-size:8pt}
+    #llTable input,#plTable input{font-size:8pt;padding:0 2px}
+    .data-table input{border:0!important;background:#fff!important;color:#000!important;text-align:right}
+    .field input{border:0!important;background:#fff!important;color:#000!important;padding:1px 2px!important;font-size:8.5pt}
+    .field label{color:#000!important;font-size:8pt;margin-bottom:2px}
+    .fields.compact{gap:4px}
+    #sheetCard .fields{grid-template-columns:repeat(4,1fr)}
+    #resultsCard .grid{grid-template-columns:repeat(5,1fr)!important;gap:5px}
+    .result .value{font-size:14pt}
+    .result small{font-size:8pt}
+    .trend-controls{display:none!important}
+    .chart-card{padding:5px;break-inside:avoid}
+    #llChart{height:210px!important}
+    .signatures{display:grid!important;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px;border-top:1px solid #000;padding-top:8px;font-size:8.5pt}
+    .signatures h4{margin:0 0 6px;font-size:9pt}
+    .signatures p{margin:0 0 10px}
+    .remarks-out{display:block;margin:10px 0 0;padding:6px 0 0;border-top:1px solid #000;font-size:9pt}
+  }
+  @media(max-width:800px){#resultsCard .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<script>
+  try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
+</script>
+</head>
+<body>
+
+<header class="topbar"><div class="wrap"><nav>
+  <a class="brand" href="../index.html"><img class="logo" src="../icons/mbisecad-mark.png" alt=""><span>MbiseCAD</span></a>
+  <div class="navright">
+    <a class="navlink" href="../civil-lab-tools.html">← Civil Lab Tools</a>
+    <button class="theme" id="themeBtn" type="button" aria-label="Switch colour theme">☀️ Light</button>
+  </div>
+</nav></div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="crumbs"><a href="../civil-lab-tools.html">Civil Lab Tools</a> / Soil Testing / Atterberg Limits</p>
+    <div class="eyebrow">Soil Testing</div>
+    <h1>Atterberg Limits — Liquid &amp; Plastic Limit</h1>
+    <p class="lead">Enter the four cone-penetration determinations and the two plastic-limit determinations. The liquid limit is read from the linear penetration–moisture relationship at 20 mm; plasticity index, linear shrinkage and shrinkage product update as you type.</p>
+  </section>
+
+  <section id="atterberg">
+
+    <div class="tool" id="infoCard">
+      <h3>1. Test information</h3>
+      <div class="fields mt">
+        <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
+        <div class="field"><label for="i-client">Client / consultant</label><input id="i-client" type="text" data-info="client" placeholder="e.g. China Wu Yi Co., Ltd"></div>
+        <div class="field"><label for="i-location">Location</label><input id="i-location" type="text" data-info="location" placeholder="e.g. Km 345 borrow pit"></div>
+        <div class="field"><label for="i-materialFor">Material for</label><input id="i-materialFor" type="text" data-info="materialFor" placeholder="e.g. Quality control"></div>
+        <div class="field"><label for="i-materialFrom">Material from</label><input id="i-materialFrom" type="text" data-info="materialFrom" placeholder="e.g. Borrow pit"></div>
+        <div class="field"><label for="i-sampleNo">Sample number</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/002"></div>
+        <div class="field"><label for="i-dateSampled">Date sampled</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
+        <div class="field"><label for="i-dateTested">Date tested</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
+        <div class="field"><label for="i-testedBy">Tested by</label><input id="i-testedBy" type="text" data-info="testedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-checkedBy">Checked by</label><input id="i-checkedBy" type="text" data-info="checkedBy" placeholder="Name"></div>
+        <div class="field"><label for="i-verifiedBy">Verified by (optional)</label><input id="i-verifiedBy" type="text" data-info="verifiedBy" placeholder="Name"></div>
+        <div class="field full"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-info="testMethod" placeholder="CML TEST 1.2, 1.3 and 1.4, Ref. BS 1377: Part 2: 1990"></div>
+        <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Observations, deviations or classification notes"></div>
+      </div>
+    </div>
+
+    <div class="tool stack">
+      <h3>2. Liquid limit — cone penetration</h3>
+      <p class="hint">Enter four determinations. Moisture content = (wet container − dry container) ÷ (dry container − container) × 100. The chart fits penetration against moisture content and reads the liquid limit at 20 mm.</p>
+      <div class="table-scroll">
+        <table class="data-table" id="llTable">
+          <thead><tr><th>Property</th><th>Determination 1</th><th>Determination 2</th><th>Determination 3</th><th>Determination 4</th></tr></thead>
+          <tbody id="llBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tool stack">
+      <h3>3. Plastic limit</h3>
+      <p class="hint">Two determinations are averaged. The same moisture-content formula is used; the container number is recorded with each determination.</p>
+      <div class="table-scroll">
+        <table class="data-table" id="plTable">
+          <thead><tr><th>Property</th><th>Determination 1</th><th>Determination 2</th></tr></thead>
+          <tbody id="plBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tool stack" id="sheetCard">
+      <h3>4. Sample preparation, linear shrinkage and shrinkage product</h3>
+      <div class="fields compact mt">
+        <div class="field"><label for="p-preparation">Sample preparation</label><input id="p-preparation" type="text" data-prep="preparation" placeholder="e.g. As received, air dried"></div>
+        <div class="field"><label for="p-airDriedTemp">Air dried temperature (°C)</label><input id="p-airDriedTemp" type="number" step="any" inputmode="decimal" data-prep="airDriedTemp" placeholder="e.g. 25"></div>
+        <div class="field"><label for="p-ovenDriedTemp">Oven dried temperature (°C)</label><input id="p-ovenDriedTemp" type="number" step="any" inputmode="decimal" data-prep="ovenDriedTemp" placeholder="e.g. 105"></div>
+        <div class="field"><label for="p-passing425">Passing 0.425 mm from sieve (%)</label><input id="p-passing425" type="number" min="0" step="any" inputmode="decimal" data-prep="passing425" placeholder="e.g. 22.22"></div>
+        <div class="field"><label for="p-passing075">Passing 0.075 mm from sieve (%)</label><input id="p-passing075" type="number" min="0" step="any" inputmode="decimal" data-prep="passing075" placeholder="e.g. 17.32"></div>
+        <div class="field"><label for="k-specimenRef">Specimen reference</label><input id="k-specimenRef" type="text" data-shrink="specimenRef" placeholder="e.g. 12"></div>
+        <div class="field"><label for="k-initialLength">Initial length (mm)</label><input id="k-initialLength" type="number" min="0" step="any" inputmode="decimal" data-shrink="initialLength" placeholder="e.g. 150"></div>
+        <div class="field"><label for="k-driedLength">Oven-dried length (mm)</label><input id="k-driedLength" type="number" min="0" step="any" inputmode="decimal" data-shrink="driedLength" placeholder="e.g. 145"></div>
+      </div>
+      <p class="hint">Linear shrinkage = (initial length − oven-dried length) ÷ initial length × 100. Shrinkage product = linear shrinkage × percentage passing 0.425 mm. The Excel sheet takes the 0.075 mm value from the grading sheet for its unlabelled check total; enter it here if you want that check shown.</p>
+      <div class="formula" id="checkNote">Sheet check total (LL + PL + % passing 0.075 mm): —</div>
+    </div>
+
+    <div class="tool stack" id="resultsCard">
+      <div class="head-row">
+        <h3>5. Atterberg results</h3>
+        <div class="actions">
+          <button class="btn secondary" id="btnPrint" type="button">Print report</button>
+          <button class="btn secondary" id="btnCsv" type="button">Export CSV</button>
+          <button class="btn secondary" id="btnReset" type="button">Reset sheet</button>
+        </div>
+      </div>
+      <div class="grid stack">
+        <div class="tool result"><small>Liquid limit (LL)</small><div class="value" id="llVal">—</div><small>% at 20 mm</small></div>
+        <div class="tool result"><small>Plastic limit (PL)</small><div class="value" id="plVal">—</div><small>% average</small></div>
+        <div class="tool result"><small>Plasticity index (PI)</small><div class="value" id="piVal">—</div><small>LL − PL</small></div>
+        <div class="tool result"><small>Linear shrinkage</small><div class="value" id="lsVal">—</div><small>%</small></div>
+        <div class="tool result"><small>Shrinkage product</small><div class="value" id="spVal">—</div><small>LS × %&lt;0.425</small></div>
+      </div>
+      <p class="hint" id="message" role="status" aria-live="polite">Enter the cone-penetration and moisture determinations. Results update as you type.</p>
+      <div class="trend-controls fields mt">
+        <div class="field"><label for="trendM">Slope m (optional)</label><input id="trendM" type="number" step="any" inputmode="decimal" data-trend="m" placeholder="auto-fit"></div>
+        <div class="field"><label for="trendB">Intercept b (optional)</label><input id="trendB" type="number" step="any" inputmode="decimal" data-trend="b" placeholder="auto-fit"></div>
+        <div class="field"><label>&nbsp;</label><div class="actions" style="margin:0"><button class="btn secondary" id="fitTrend" type="button">Fit from tests</button><button class="btn secondary" id="autoTrend" type="button">Auto-fit</button></div></div>
+      </div>
+      <div class="formula" id="trendEq">Enter at least two valid determinations to fit the penetration–moisture trend.</div>
+      <p class="hint" id="saveState"></p>
+    </div>
+
+    <div class="tool stack" id="chartsCard">
+      <h3>6. Penetration–moisture chart</h3>
+      <p class="hint">Measured determinations, fitted trend and the 20 mm liquid-limit read-off. The guide shows the liquid limit and plastic limit on the same moisture axis.</p>
+      <div class="chart-wrap"><canvas id="llChart" height="320"></canvas></div>
+    </div>
+
+    <p class="remarks-out" id="remarksOut"></p>
+
+    <div class="signatures">
+      <div>
+        <h4>PREPARED BY</h4>
+        <p>Name: <span data-sign="testedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="date"></span></p>
+        <p>Assistant Materials Technician</p>
+      </div>
+      <div>
+        <h4>CHECKED BY</h4>
+        <p>Name: <span data-sign="checkedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="date"></span></p>
+        <p>Consultant's Materials Technician</p>
+      </div>
+      <div>
+        <h4>VERIFIED BY</h4>
+        <p>Name: <span data-sign="verifiedBy"></span></p>
+        <p>Signature: ______________________________</p>
+        <p>Date: <span data-sign="date"></span></p>
+        <p>Consultant's Materials Engineer</p>
+      </div>
+    </div>
+
+    <div class="notice"><strong>Engineering note:</strong> The liquid limit is obtained by linear regression of cone penetration against moisture content and solving at 20 mm; the plastic limit is the mean of the two moisture determinations. Confirm the cone mass, penetration time, drying temperature, sample preparation, number of determinations and acceptance criteria against BS 1377 or the project specification. This tool performs the calculation only and does not replace engineering review.</div>
+
+  </section>
+</main>
+
+<footer><div class="wrap footer"><span>© <span id="year"></span> MbiseCAD · Onesmo Komba</span><span>Civil Lab Tools · Built for practical work</span></div></footer>
+
+<script src="../assets/shared.js"></script>
+<script src="../assets/tool-kit.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var TK=window.MbiseTool||null;
+  var el=function(id){return document.getElementById(id)};
+  var each=function(sel,fn){Array.prototype.forEach.call(document.querySelectorAll(sel),fn);};
+
+  var LL_COUNT=4,PL_COUNT=2;
+  var LL_ROWS=[
+    {key:'penetration',label:'Cone penetration (mm)',type:'number',ph:'e.g. 16.61'},
+    {key:'containerNo',label:'Container no.',type:'text',ph:'e.g. 400'},
+    {key:'wetCont',label:'Wt. container + wet soil (g)',type:'number',ph:'e.g. 45.63'},
+    {key:'dryCont',label:'Wt. container + dry soil (g)',type:'number',ph:'e.g. 41.09'},
+    {key:'contMass',label:'Weight of container (g)',type:'number',ph:'e.g. 23.33'},
+    {key:'drySoil',label:'Weight of dry soil (g)',calc:true,dec:2},
+    {key:'water',label:'Weight of moisture (g)',calc:true,dec:2},
+    {key:'mc',label:'Moisture content (%)',calc:true,dec:2}
+  ];
+  var PL_ROWS=[
+    {key:'containerNo',label:'Container no.',type:'text',ph:'e.g. 444'},
+    {key:'wetCont',label:'Wt. container + wet soil (g)',type:'number',ph:'e.g. 25.69'},
+    {key:'dryCont',label:'Wt. container + dry soil (g)',type:'number',ph:'e.g. 25.12'},
+    {key:'contMass',label:'Weight of container (g)',type:'number',ph:'e.g. 22.67'},
+    {key:'drySoil',label:'Weight of dry soil (g)',calc:true,dec:2},
+    {key:'water',label:'Weight of moisture (g)',calc:true,dec:2},
+    {key:'mc',label:'Moisture content (%)',calc:true,dec:2}
+  ];
+
+  function escapeHTML(value){
+    return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function fmt(n,d){
+    d=d===undefined?2:d;
+    if(typeof n!=='number'||!isFinite(n))return '—';
+    var s=n.toFixed(d);
+    if(/^-0(\.0*)?$/.test(s))s=s.slice(1);
+    return s;
+  }
+  function num(value){
+    var s=String(value==null?'':value).trim();
+    return s===''?NaN:Number(s);
+  }
+  function emptyDetermination(){return {penetration:'',containerNo:'',wetCont:'',dryCont:'',contMass:''};}
+  function defaultState(){
+    return {
+      info:{project:'',client:'',location:'',materialFor:'',materialFrom:'',sampleNo:'',dateSampled:'',dateTested:'',testedBy:'',checkedBy:'',verifiedBy:'',testMethod:'CML TEST 1.2, 1.3 and 1.4, Ref. BS 1377: Part 2: 1990',remarks:''},
+      prep:{preparation:'',airDriedTemp:'',ovenDriedTemp:'',passing425:'',passing075:''},
+      shrink:{specimenRef:'',initialLength:'',driedLength:''},
+      trend:{m:'',b:''},
+      ll:[emptyDetermination(),emptyDetermination(),emptyDetermination(),emptyDetermination()],
+      pl:[emptyDetermination(),emptyDetermination()]
+    };
+  }
+
+  var state=defaultState(),lastResult=null,restored=false,suppressSave=false;
+  var drawSoon=TK?TK.debounce(function(){drawAll(false);},120):function(){drawAll(false);};
+  var saveSoon=TK?TK.debounce(saveNow,600):function(){};
+
+  function saveNow(){
+    if(!TK||suppressSave)return;
+    var ok=TK.store('atterberg').save(state);
+    var status=el('saveState');
+    if(status){
+      var d=new Date(),p=function(n){return n<10?'0'+n:String(n)};
+      status.textContent=ok?('Saved in this browser at '+p(d.getHours())+':'+p(d.getMinutes())+'.'):'Could not save in this browser.';
+      status.className=ok?'hint':'hint bad-text';
+    }
+  }
+
+  function restore(){
+    if(!TK)return;
+    var saved=TK.store('atterberg').load(null);
+    if(!saved||typeof saved!=='object')return;
+    restored=true;
+    var base=defaultState();
+    ['info','prep','shrink','trend'].forEach(function(group){
+      if(saved[group]&&typeof saved[group]==='object'){
+        Object.keys(base[group]).forEach(function(k){
+          var v=saved[group][k];
+          if(typeof v==='string'||typeof v==='number')base[group][k]=String(v);
+        });
+      }
+    });
+    [['ll',LL_COUNT],['pl',PL_COUNT]].forEach(function(entry){
+      var group=entry[0],count=entry[1];
+      if(Object.prototype.toString.call(saved[group])==='[object Array]'){
+        for(var i=0;i<count;i++){
+          if(!saved[group][i]||typeof saved[group][i]!=='object')continue;
+          Object.keys(base[group][i]).forEach(function(k){
+            var v=saved[group][i][k];
+            if(typeof v==='string'||typeof v==='number')base[group][i][k]=String(v);
+          });
+        }
+      }
+    });
+    state=base;
+  }
+
+  function syncFromDom(){
+    each('[data-info]',function(t){state.info[t.getAttribute('data-info')]=t.value;});
+    each('[data-prep]',function(t){state.prep[t.getAttribute('data-prep')]=t.value;});
+    each('[data-shrink]',function(t){state.shrink[t.getAttribute('data-shrink')]=t.value;});
+    each('[data-trend]',function(t){state.trend[t.getAttribute('data-trend')]=t.value;});
+    each('[data-ll]',function(t){
+      var i=Number(t.getAttribute('data-ll'));
+      if(state.ll[i])state.ll[i][t.getAttribute('data-field')]=t.value;
+    });
+    each('[data-pl]',function(t){
+      var i=Number(t.getAttribute('data-pl'));
+      if(state.pl[i])state.pl[i][t.getAttribute('data-field')]=t.value;
+    });
+  }
+
+  function syncInputs(){
+    each('[data-info]',function(t){t.value=state.info[t.getAttribute('data-info')]||'';});
+    each('[data-prep]',function(t){t.value=state.prep[t.getAttribute('data-prep')]||'';});
+    each('[data-shrink]',function(t){t.value=state.shrink[t.getAttribute('data-shrink')]||'';});
+    each('[data-trend]',function(t){t.value=state.trend[t.getAttribute('data-trend')]||'';});
+    each('[data-ll]',function(t){
+      var i=Number(t.getAttribute('data-ll'));
+      t.value=(state.ll[i]&&state.ll[i][t.getAttribute('data-field')])||'';
+    });
+    each('[data-pl]',function(t){
+      var i=Number(t.getAttribute('data-pl'));
+      t.value=(state.pl[i]&&state.pl[i][t.getAttribute('data-field')])||'';
+    });
+    syncSignatures();
+  }
+
+  function buildDeterminationTable(bodyId,attr,rows,count){
+    var body=el(bodyId);
+    if(!body)return;
+    var html='';
+    rows.forEach(function(row){
+      html+='<tr><td class="lbl">'+escapeHTML(row.label)+'</td>';
+      for(var i=0;i<count;i++){
+        if(row.calc){
+          html+='<td class="num"><span class="calc-val" id="c-'+attr+'-'+i+'-'+row.key+'">—</span></td>';
+        }else{
+          html+='<td><input type="'+row.type+'"'+(row.type==='number'?' min="0" step="any" inputmode="decimal"':'')+' data-'+attr+'="'+i+'" data-field="'+row.key+'" aria-label="'+escapeHTML(row.label+' — Determination '+(i+1))+'"'+(row.ph?' placeholder="'+escapeHTML(row.ph)+'"':'')+' autocomplete="off"></td>';
+        }
+      }
+      html+='</tr>';
+    });
+    body.innerHTML=html;
+  }
+
+  function calcDetermination(row,needPenetration){
+    var wet=num(row.wetCont),dry=num(row.dryCont),tare=num(row.contMass),out={};
+    out.drySoil=(isFinite(dry)&&isFinite(tare))?dry-tare:NaN;
+    out.water=(isFinite(wet)&&isFinite(dry))?wet-dry:NaN;
+    out.mc=(out.drySoil>0&&out.water>=0)?out.water/out.drySoil*100:NaN;
+    if(needPenetration)out.penetration=num(row.penetration);
+    return out;
+  }
+
+  function fitLinear(points){
+    var pts=points.filter(function(p){return p&&isFinite(p.x)&&isFinite(p.y);});
+    if(pts.length<2)return null;
+    var n=pts.length,sx=0,sy=0,sxx=0,sxy=0,syy=0;
+    pts.forEach(function(p){sx+=p.x;sy+=p.y;sxx+=p.x*p.x;sxy+=p.x*p.y;syy+=p.y*p.y;});
+    var denom=n*sxx-sx*sx;
+    if(Math.abs(denom)<1e-12)return null;
+    var m=(n*sxy-sx*sy)/denom,b=(sy-m*sx)/n;
+    if(!isFinite(m)||!isFinite(b))return null;
+    var mean=sy/n,ssTot=0,ssRes=0;
+    pts.forEach(function(p){
+      ssTot+=(p.y-mean)*(p.y-mean);
+      ssRes+=(p.y-(m*p.x+b))*(p.y-(m*p.x+b));
+    });
+    return {m:m,b:b,r2:ssTot>1e-12?1-ssRes/ssTot:null,n:n,fit:true};
+  }
+
+  function setText(id,value,dec,idSuffix){
+    var e=el(id);
+    if(e)e.textContent=(typeof value==='number'&&isFinite(value))?fmt(value,dec):(idSuffix||'—');
+  }
+
+  function renderDeterminations(){
+    LL_ROWS.forEach(function(row){
+      if(!row.calc)return;
+      for(var i=0;i<LL_COUNT;i++)setText('c-ll-'+i+'-'+row.key,lastResult.ll[i][row.key],row.dec);
+    });
+    PL_ROWS.forEach(function(row){
+      if(!row.calc)return;
+      for(var i=0;i<PL_COUNT;i++)setText('c-pl-'+i+'-'+row.key,lastResult.pl[i][row.key],row.dec);
+    });
+  }
+
+  function renderTrend(){
+    var r=lastResult,eq=el('trendEq');
+    if(!eq)return;
+    var t=r.trend;
+    if(t){
+      var sign=t.b<0?' − ':' + ';
+      var text='Penetration = '+fmt(t.m,4)+' × Moisture'+sign+fmt(Math.abs(t.b),4);
+      if(t.r2!==null&&t.r2!==undefined)text+='   ·   R² = '+fmt(t.r2,4);
+      text+='   ·   '+(t.fit?'Fitted from '+t.n+' determinations':'Custom coefficients')+'.';
+      if(r.partialTrend)text+=' Enter valid numeric m and b, or clear both for auto-fit.';
+      if(Math.abs(t.m)<1e-9)text+=' Slope is zero — the liquid limit cannot be read.';
+      eq.textContent=text;
+    }else{
+      eq.textContent=r.partialTrend?'Enter both m and b, or clear both for auto-fit.':'Enter at least two valid determinations to fit the penetration–moisture trend.';
+    }
+    var check=el('checkNote');
+    if(check)check.textContent='Sheet check total (LL + PL + % passing 0.075 mm): '+(isFinite(r.checkTotal)?fmt(r.checkTotal,2):'—');
+  }
+
+  function syncSignatures(){
+    each('[data-sign]',function(t){
+      var key=t.getAttribute('data-sign'),value='';
+      if(key==='date')value=state.info.dateTested||state.info.dateSampled||'';
+      else if(key==='verifiedBy')value=state.info.verifiedBy||state.info.checkedBy||'';
+      else value=state.info[key]||'';
+      t.textContent=value;
+    });
+    var out=el('remarksOut');
+    if(out)out.textContent=state.info.remarks?('Remarks: '+state.info.remarks):'';
+  }
+
+  function calc(){
+    var ll=[],pl=[],llPoints=[],plMc=[];
+    for(var i=0;i<LL_COUNT;i++){
+      var r=calcDetermination(state.ll[i],true);
+      ll.push(r);
+      if(isFinite(r.penetration)&&isFinite(r.mc))llPoints.push({x:r.mc,y:r.penetration,i:i+1});
+    }
+    for(i=0;i<PL_COUNT;i++){
+      var q=calcDetermination(state.pl[i],false);
+      pl.push(q);
+      if(isFinite(q.mc))plMc.push(q.mc);
+    }
+    var fit=fitLinear(llPoints);
+    var mRaw=String(state.trend.m==null?'':state.trend.m).trim(),bRaw=String(state.trend.b==null?'':state.trend.b).trim();
+    var partialTrend=(mRaw!==''||bRaw!=='')&&(mRaw===''||bRaw===''||!isFinite(m)||!isFinite(b));
+    var custom=(mRaw!==''&&bRaw!=='');
+    var m=num(mRaw),b=num(bRaw),trend=null,mode='none';
+    if(custom&&isFinite(m)&&isFinite(b)){
+      trend={m:m,b:b,r2:fit?fit.r2:null,n:llPoints.length,fit:false};
+      mode='custom';
+    }else if(fit){
+      trend=fit;mode='fit';
+    }
+    var llValue=(trend&&isFinite(trend.m)&&Math.abs(trend.m)>1e-9)?(20-trend.b)/trend.m:NaN;
+    var plValue=plMc.length?plMc.reduce(function(a,v){return a+v;},0)/plMc.length:NaN;
+    var piValue=(isFinite(llValue)&&isFinite(plValue))?llValue-plValue:NaN;
+    var initial=num(state.shrink.initialLength),dried=num(state.shrink.driedLength);
+    var lsValue=(isFinite(initial)&&isFinite(dried)&&initial>0&&dried>=0)?(initial-dried)/initial*100:NaN;
+    var passing425=num(state.prep.passing425),passing075=num(state.prep.passing075);
+    var spValue=(isFinite(lsValue)&&isFinite(passing425)&&passing425>=0)?lsValue*passing425:NaN;
+    var checkTotal=(isFinite(llValue)&&isFinite(plValue)&&isFinite(passing075)&&passing075>=0)?llValue+plValue+passing075:NaN;
+    lastResult={ll:ll,pl:pl,llPoints:llPoints,plMc:plMc,trend:trend,fit:fit,mode:mode,partialTrend:partialTrend,llValue:llValue,plValue:plValue,piValue:piValue,lsValue:lsValue,spValue:spValue,checkTotal:checkTotal,passing425:passing425,passing075:passing075};
+    renderDeterminations();
+    setText('llVal',llValue,2);
+    setText('plVal',plValue,2);
+    setText('piVal',piValue,2);
+    setText('lsVal',lsValue,2);
+    setText('spVal',spValue,2);
+    renderTrend();
+    renderMessage();
+    syncSignatures();
+    drawSoon();
+    return lastResult;
+  }
+
+  function renderMessage(){
+    var r=lastResult,msg=el('message');
+    if(!msg)return;
+    if(r.llPoints.length<2)msg.textContent=r.llPoints.length+' valid liquid-limit determination'+(r.llPoints.length===1?'':'s')+' · add another to fit the trend.';
+    else if(!isFinite(r.llValue))msg.textContent='The fitted slope is zero or invalid — check the cone penetration readings.';
+    else if(r.plMc.length===0)msg.textContent='Liquid limit calculated · enter plastic-limit determinations to calculate PI.';
+    else if(r.mode==='custom')msg.textContent=r.llPoints.length+' liquid-limit points · using custom trend coefficients.';
+    else msg.textContent=r.llPoints.length+' liquid-limit points · trend fitted from '+r.llPoints.length+' determinations.';
+    if(r.partialTrend)msg.textContent+=' Enter valid numeric m and b, or clear both for auto-fit.';
+  }
+
+  /* ---------- chart ---------- */
+  function chartBase(printMode){
+    var canvas=el('llChart');
+    if(!canvas)return null;
+    var rect=canvas.getBoundingClientRect(),W=Math.max(300,rect.width||600),H=320,dpr=printMode?1:(window.devicePixelRatio||1);
+    canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.height=H+'px';
+    var ctx=canvas.getContext('2d');
+    if(!ctx)return null;
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    function cv(name,d){
+      try{return getComputedStyle(document.documentElement).getPropertyValue(name).trim()||d;}catch(e){return d;}
+    }
+    var p={
+      muted:printMode?'#333':cv('--muted','#888'),
+      grid:printMode?'#d9d9d9':cv('--line-soft','#ccc'),
+      axis:printMode?'#666':cv('--line','#999'),
+      ink:printMode?'#000':cv('--text','#000'),
+      panel:printMode?'#fff':cv('--panel','#fff'),
+      orange:printMode?'#ef6c00':cv('--orange','#f70'),
+      green:printMode?'#2e7d32':cv('--green','#4a4'),
+      blue:printMode?'#1565c0':'#1f6fb2'
+    };
+    return {ctx:ctx,W:W,H:H,p:p};
+  }
+
+  function chartAxes(base,opt){
+    var ctx=base.ctx,W=base.W,H=base.H,p=base.p,L=56,R=18,T=32,B=46;
+    var x0=opt.x0,x1=opt.x1,y0=opt.y0,y1=opt.y1;
+    if(!(x1>x0))x1=x0+1;
+    if(!(y1>y0))y1=y0+1;
+    function X(v){return L+(v-x0)/(x1-x0)*(W-L-R);}
+    function Y(v){return H-B-(v-y0)/(y1-y0)*(H-T-B);}
+    ctx.font='11px IBM Plex Sans, sans-serif';ctx.textBaseline='alphabetic';ctx.fillStyle=p.muted;
+    ctx.lineWidth=1;ctx.strokeStyle=p.grid;
+    for(var i=0;i<=5;i++){
+      var yv=y0+(y1-y0)*i/5,y=Y(yv);
+      ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(fmt(yv,1),L-6,y+4);
+      var xv=x0+(x1-x0)*i/5,x=X(xv);
+      ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H-B);ctx.stroke();
+      ctx.textAlign='center';ctx.fillText(fmt(xv,1),x,H-B+15);
+    }
+    ctx.strokeStyle=p.axis;ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,H-B);ctx.lineTo(W-R,H-B);ctx.stroke();
+    ctx.fillStyle=p.muted;ctx.textAlign='center';ctx.fillText('Moisture content (%)',(L+W-R)/2,H-5);
+    ctx.save();ctx.translate(13,(T+H-B)/2);ctx.rotate(-Math.PI/2);ctx.fillText('Cone penetration (mm)',0,0);ctx.restore();
+    return {X:X,Y:Y,W:W,H:H,L:L,R:R,T:T,B:B};
+  }
+
+  function drawAll(printMode){
+    var base=chartBase(printMode);
+    if(!base)return;
+    var r=lastResult,ctx=base.ctx,p=base.p;
+    if(!r||!r.llPoints.length){
+      ctx.fillStyle=p.muted;ctx.font='12px IBM Plex Sans, sans-serif';ctx.textAlign='left';ctx.fillText('Enter cone penetration and moisture determinations to display the chart.',18,40);
+      return;
+    }
+    var xs=r.llPoints.map(function(pt){return pt.x;});
+    if(isFinite(r.llValue))xs.push(r.llValue);
+    if(isFinite(r.plValue))xs.push(r.plValue);
+    var xmin=Math.min.apply(null,xs),xmax=Math.max.apply(null,xs),pad=Math.max(1,(xmax-xmin)*0.08);
+    xmin=Math.max(0,xmin-pad);xmax=xmax+pad;
+    var ys=r.llPoints.map(function(pt){return pt.y;});
+    var ymin=Math.min(14,Math.min.apply(null,ys))-1,ymax=Math.max(26,Math.max.apply(null,ys))+1;
+    var ax=chartAxes(base,{x0:xmin,x1:xmax,y0:ymin,y1:ymax});
+    /* 20 mm read-off */
+    ctx.setLineDash([5,4]);ctx.strokeStyle=p.axis;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ax.L,ax.Y(20));ctx.lineTo(ax.W-ax.R,ax.Y(20));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=p.muted;ctx.textAlign='left';ctx.fillText('20 mm',ax.L+6,ax.Y(20)-5);
+    /* guide lines at LL and PL */
+    if(isFinite(r.llValue)){
+      ctx.setLineDash([4,4]);ctx.strokeStyle=p.blue;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(ax.X(r.llValue),ax.T);ctx.lineTo(ax.X(r.llValue),ax.Y(20));ctx.stroke();ctx.setLineDash([]);
+    }
+    if(isFinite(r.plValue)){
+      ctx.setLineDash([4,4]);ctx.strokeStyle=p.blue;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(ax.X(r.plValue),ax.T);ctx.lineTo(ax.X(r.plValue),ax.Y(20));ctx.stroke();ctx.setLineDash([]);
+    }
+    if(isFinite(r.llValue)&&isFinite(r.plValue)){
+      ctx.strokeStyle=p.blue;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(ax.X(r.plValue),ax.Y(20));ctx.lineTo(ax.X(r.llValue),ax.Y(20));ctx.stroke();
+    }
+    /* trend */
+    if(r.trend){
+      ctx.strokeStyle=p.green;ctx.lineWidth=2;ctx.beginPath();
+      ctx.moveTo(ax.X(xmin),ax.Y(r.trend.m*xmin+r.trend.b));
+      ctx.lineTo(ax.X(xmax),ax.Y(r.trend.m*xmax+r.trend.b));
+      ctx.stroke();
+    }
+    /* measured points */
+    r.llPoints.forEach(function(pt){
+      ctx.beginPath();ctx.arc(ax.X(pt.x),ax.Y(pt.y),5.5,0,Math.PI*2);
+      ctx.fillStyle=p.orange;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=p.panel;ctx.stroke();
+      ctx.fillStyle=p.ink;ctx.textAlign='left';ctx.font='600 10px IBM Plex Sans, sans-serif';ctx.fillText(String(pt.i),ax.X(pt.x)+7,ax.Y(pt.y)-7);
+    });
+    /* LL / PL labels */
+    ctx.font='600 11px IBM Plex Sans, sans-serif';ctx.textAlign='center';
+    if(isFinite(r.llValue)){ctx.fillStyle=p.blue;ctx.fillText('LL '+fmt(r.llValue,2),ax.X(r.llValue),ax.T+12);}
+    if(isFinite(r.plValue)){ctx.fillStyle=p.blue;ctx.fillText('PL '+fmt(r.plValue,2),ax.X(r.plValue),ax.T+12);}
+    ctx.textAlign='left';ctx.fillStyle=p.muted;ctx.font='11px IBM Plex Sans, sans-serif';
+    ctx.fillText('Measured',ax.L+8,ax.T+12);
+    if(r.trend){ctx.fillStyle=p.green;ctx.fillText('Trend',ax.L+8,ax.T+26);}
+  }
+
+  /* ---------- print + CSV ---------- */
+  function printSheet(){
+    syncFromDom();
+    var r=calc();
+    if(r.llPoints.length<2||!isFinite(r.llValue)||r.plMc.length===0){
+      el('message').textContent='Enter at least two liquid-limit determinations and one plastic-limit determination before printing.';
+      return;
+    }
+    var info=state.info,meta=[];
+    if(info.project)meta.push('Project: '+info.project);
+    if(info.client)meta.push('Client / consultant: '+info.client);
+    if(info.location)meta.push('Location: '+info.location);
+    if(info.materialFor)meta.push('Material for: '+info.materialFor);
+    if(info.materialFrom)meta.push('Material from: '+info.materialFrom);
+    if(info.sampleNo)meta.push('Sample number: '+info.sampleNo);
+    if(info.dateSampled)meta.push('Date sampled: '+info.dateSampled);
+    if(info.dateTested)meta.push('Date tested: '+info.dateTested);
+    if(info.testedBy)meta.push('Tested by: '+info.testedBy);
+    if(info.checkedBy)meta.push('Checked by: '+info.checkedBy);
+    if(info.testMethod)meta.push('Test method: '+info.testMethod);
+    meta.push('LL: '+fmt(r.llValue,2)+' % · PL: '+fmt(r.plValue,2)+' % · PI: '+fmt(r.piValue,2));
+    if(isFinite(r.lsValue))meta.push('Linear shrinkage: '+fmt(r.lsValue,2)+' % · Shrinkage product: '+fmt(r.spValue,2));
+    if(info.remarks)meta.push('Remarks: '+info.remarks);
+    var title='Atterberg Limits — Plasticity Index'+(info.sampleNo?' — '+info.sampleNo:'');
+    drawAll(true);
+    if(TK)TK.printReport({title:title,meta:meta});
+    else window.print();
+    drawAll(false);
+  }
+
+  function exportCsv(){
+    syncFromDom();
+    var r=calc(),rows=[
+      ['Atterberg Limits — Plasticity Index'],
+      ['Project',state.info.project],['Client / consultant',state.info.client],['Location',state.info.location],
+      ['Material for',state.info.materialFor],['Material from',state.info.materialFrom],['Sample number',state.info.sampleNo],
+      ['Date sampled',state.info.dateSampled],['Date tested',state.info.dateTested],['Tested by',state.info.testedBy],
+      ['Checked by',state.info.checkedBy],['Verified by',state.info.verifiedBy],['Test method',state.info.testMethod],
+      ['Sample preparation',state.prep.preparation],['Air dried temperature (C)',state.prep.airDriedTemp],
+      ['Oven dried temperature (C)',state.prep.ovenDriedTemp],['Passing 0.425 mm (%)',state.prep.passing425],
+      ['Passing 0.075 mm (%)',state.prep.passing075],['Specimen reference',state.shrink.specimenRef],
+      ['Initial length (mm)',state.shrink.initialLength],['Oven-dried length (mm)',state.shrink.driedLength],['Remarks',state.info.remarks],[]];
+    rows.push(['Liquid limit determinations','1','2','3','4']);
+    LL_ROWS.forEach(function(row){
+      var line=[row.label];
+      for(var i=0;i<LL_COUNT;i++){
+        line.push(row.calc&&isFinite(r.ll[i][row.key])?fmt(r.ll[i][row.key],row.dec):(row.calc?'':state.ll[i][row.key]));
+      }
+      rows.push(line);
+    });
+    rows.push([]);
+    rows.push(['Plastic limit determinations','1','2']);
+    PL_ROWS.forEach(function(row){
+      var line=[row.label];
+      for(var i=0;i<PL_COUNT;i++){
+        line.push(row.calc&&isFinite(r.pl[i][row.key])?fmt(r.pl[i][row.key],row.dec):(row.calc?'':state.pl[i][row.key]));
+      }
+      rows.push(line);
+    });
+    rows.push([]);
+    rows.push(['Trend slope m',r.trend?fmt(r.trend.m,4):'']);
+    rows.push(['Trend intercept b',r.trend?fmt(r.trend.b,4):'']);
+    rows.push(['R squared',r.trend&&r.trend.r2!==null?fmt(r.trend.r2,4):'']);
+    rows.push(['Liquid limit LL (%)',isFinite(r.llValue)?fmt(r.llValue,2):'']);
+    rows.push(['Plastic limit PL (%)',isFinite(r.plValue)?fmt(r.plValue,2):'']);
+    rows.push(['Plasticity index PI',isFinite(r.piValue)?fmt(r.piValue,2):'']);
+    rows.push(['Linear shrinkage (%)',isFinite(r.lsValue)?fmt(r.lsValue,2):'']);
+    rows.push(['Shrinkage product',isFinite(r.spValue)?fmt(r.spValue,2):'']);
+    rows.push(['Sheet check total (LL + PL + %<0.075)',isFinite(r.checkTotal)?fmt(r.checkTotal,2):'']);
+    if(TK)TK.exportCSV('atterberg-'+TK.fileStamp()+'.csv',rows);
+    else el('message').textContent='CSV export is not available in this browser.';
+  }
+
+  /* ---------- events ---------- */
+  function onInput(event){
+    var t=event.target;
+    if(!t||!t.getAttribute)return;
+    if(t.getAttribute('data-info')){state.info[t.getAttribute('data-info')]=t.value;syncSignatures();saveSoon();return;}
+    if(t.getAttribute('data-prep')){state.prep[t.getAttribute('data-prep')]=t.value;calc();saveSoon();return;}
+    if(t.getAttribute('data-shrink')){state.shrink[t.getAttribute('data-shrink')]=t.value;calc();saveSoon();return;}
+    if(t.getAttribute('data-trend')){state.trend[t.getAttribute('data-trend')]=t.value;calc();saveSoon();return;}
+    if(t.getAttribute('data-ll')){
+      var li=Number(t.getAttribute('data-ll'));
+      if(state.ll[li])state.ll[li][t.getAttribute('data-field')]=t.value;
+      calc();saveSoon();return;
+    }
+    if(t.getAttribute('data-pl')){
+      var pi=Number(t.getAttribute('data-pl'));
+      if(state.pl[pi])state.pl[pi][t.getAttribute('data-field')]=t.value;
+      calc();saveSoon();return;
+    }
+  }
+
+  function resetAll(){
+    if(!confirm('Clear all Atterberg test information and readings? This cannot be undone.'))return;
+    suppressSave=true;
+    state=defaultState();
+    syncInputs();
+    lastResult=null;
+    calc();
+    if(TK)TK.store('atterberg').clear();
+    var msg=el('message');if(msg)msg.textContent='Atterberg sheet cleared.';
+    var status=el('saveState');if(status){status.textContent='Saved data cleared from this browser.';status.className='hint';}
+    setTimeout(function(){suppressSave=false;},800);
+  }
+
+  function init(){
+    buildDeterminationTable('llBody','ll',LL_ROWS,LL_COUNT);
+    buildDeterminationTable('plBody','pl',PL_ROWS,PL_COUNT);
+    restore();
+    syncInputs();
+    calc();
+    if(restored&&el('message'))el('message').textContent='Restored saved Atterberg sheet. '+el('message').textContent;
+    drawAll(false);
+    document.addEventListener('input',onInput);
+    document.addEventListener('themechange',function(){drawAll(false);});
+    window.addEventListener('afterprint',function(){drawAll(false);});
+    window.addEventListener('resize',TK?TK.debounce(function(){drawAll(false);},180):function(){drawAll(false);});
+    window.addEventListener('beforeunload',function(){syncFromDom();saveNow();});
+    if(el('btnPrint'))el('btnPrint').addEventListener('click',printSheet);
+    if(el('btnCsv'))el('btnCsv').addEventListener('click',exportCsv);
+    if(el('btnReset'))el('btnReset').addEventListener('click',resetAll);
+    if(el('fitTrend'))el('fitTrend').addEventListener('click',function(){
+      syncFromDom();
+      var r=calc();
+      if(!r.fit){el('message').textContent='Add at least two valid liquid-limit determinations before fitting the trend.';return;}
+      state.trend.m=r.fit.m.toFixed(6);
+      state.trend.b=r.fit.b.toFixed(6);
+      syncInputs();calc();saveSoon();
+      el('message').textContent='Trend coefficients fitted from the current determinations.';
+    });
+    if(el('autoTrend'))el('autoTrend').addEventListener('click',function(){
+      state.trend.m='';state.trend.b='';
+      syncInputs();calc();saveSoon();
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
