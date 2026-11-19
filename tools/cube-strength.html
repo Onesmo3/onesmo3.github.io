@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#071a2f">
-<meta name="description" content="Concrete cube compressive strength calculator by MbiseCAD — KERBSTONE report sheet from Cubes Strength.xls, with adjustable 7 and 28 day cube counts, printable A4 report and CSV export.">
+<meta name="description" content="Concrete cube compressive strength calculator by MbiseCAD — report laid out exactly as Cubes Template.xls, portrait A4, with adjustable 7 and 28 day cube counts.">
 <title>Cube Strength Calculator — MbiseCAD</title>
 <link rel="icon" type="image/png" href="../icons/mbisecad-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,25 +13,47 @@
 <link rel="stylesheet" href="../assets/shared.css">
 <link rel="stylesheet" href="../assets/report.css">
 <style>
-  @page{size:A4 landscape;margin:6mm 8mm}
+  @page{size:A4 portrait;margin:5mm 6mm}
   .field.full{grid-column:1 / -1}
-  #cubeTable{min-width:1320px}
+  #cubeTable{min-width:1180px}
   #cubeTable td,#cubeTable th{padding:7px 8px;vertical-align:middle}
   #cubeTable td.lbl{white-space:nowrap;color:var(--muted);font-weight:600}
   #cubeTable input{padding:6px 7px;border-radius:8px}
   #cubeTable .num{text-align:right;font-variant-numeric:tabular-nums}
   #cubeTable .out{font-weight:700;color:var(--text)}
   #cubeTable .age-row td{font-weight:700;background:rgba(127,127,127,.10)}
-  #cubeTable .avg-row td{font-weight:700;border-top:2px solid var(--line-soft)}
-  #cubeTable .age-row .age-tools{float:right;display:inline-flex;gap:6px;align-items:center}
-  #cubeTable .age-row .age-tools .btn{padding:4px 9px;font-size:.8rem}
+  #cubeTable .age-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
+  #cubeTable .age-tools .btn{padding:4px 9px;font-size:.8rem}
   #cubeTable .cube-count{font-variant-numeric:tabular-nums;color:var(--text);margin-right:4px}
   #cubeTable .cube-remove{margin-left:6px;padding:1px 7px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);font-size:1rem;line-height:1.3;cursor:pointer}
   #cubeTable .cube-remove:hover:not(:disabled){border-color:var(--orange);color:var(--text)}
   #cubeTable button:disabled{opacity:.4;cursor:not-allowed}
+  #cubeTable .age-tools label{font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+  #cubeTable .age-tools input[type="date"]{padding:4px 6px;border-radius:8px}
+  #cubeTable .avg-row td{font-weight:700;border-top:2px solid var(--line-soft)}
   .mix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
   .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
   @media(max-width:900px){.mix-grid,.summary-grid{grid-template-columns:1fr 1fr}}
+
+  @media print{
+    .print-sheet .rpt-cube{font-size:6.1pt;line-height:1.05;margin:0}
+    .print-sheet .rpt-cube th,.print-sheet .rpt-cube td{padding:1px 1.5px;font-size:6.1pt;line-height:1.05}
+    .print-sheet .rpt-head-row td{border:0!important;padding:0!important}
+    .print-sheet .rpt-letterhead{display:flex;align-items:center;gap:5mm;height:23mm}
+    .print-sheet .rpt-jv{font:700 12pt/1.1 Arial,Helvetica,sans-serif;white-space:nowrap}
+    .print-sheet .rpt-letterhead .rpt-logos{flex:1;height:22mm;margin:0;gap:3mm}
+    .print-sheet .rpt-proj,.print-sheet .rpt-title2{text-align:center;font-weight:700;font-size:8pt}
+    .print-sheet .rpt-title2{font-size:9pt}
+    .print-sheet .rpt-mixhead td,.print-sheet .rpt-th td{text-align:center;font-weight:700}
+    .print-sheet .rpt-cube .ctr{text-align:center}
+    .print-sheet .rpt-cube .right{text-align:right;font-variant-numeric:tabular-nums}
+    .print-sheet .rpt-cube .lbl{text-align:left;font-weight:700}
+    .print-sheet .rpt-gap td{border:0!important;height:2mm;padding:0!important}
+    .print-sheet .rpt-remarks-row td{font-weight:700;height:7mm}
+    .print-sheet .rpt-sign-labels td,.print-sheet .rpt-sign-titles td{font-weight:700}
+    .print-sheet .rpt-sign-labels td,.print-sheet .rpt-sign-titles td,.print-sheet .rpt-sign-lines td{text-align:center}
+    .print-sheet .rpt-sign-lines td{height:6mm}
+  }
 </style>
 <script>
   try{document.documentElement.dataset.theme=localStorage.getItem('mbisecad-theme')||'dark'}catch(e){document.documentElement.dataset.theme='dark'}
@@ -50,9 +72,9 @@
 <main class="wrap">
   <div class="page-head">
     <div>
-      <p class="eyebrow">Concrete Testing · KERBSTONE report sheet</p>
+      <p class="eyebrow">Concrete Testing · Cubes Template.xls</p>
       <h1>Cube Compressive Strength</h1>
-      <p class="lead">Density, calibrated load and cube strength computed exactly as laid out on the KERBSTONE sheet in <em>New/Cubes Strength.xls</em> — with an adjustable number of cubes in each set (defaults: 3 at 7 days, 6 at 28 days).</p>
+      <p class="lead">Report sheet reproduced from <em>New/Cubes Template.xls</em> — portrait A4, with an adjustable number of cubes in each set (defaults: 3 at 7 days, 6 at 28 days).</p>
     </div>
   </div>
 
@@ -60,35 +82,24 @@
     <h3>1. Test information</h3>
     <div class="fields mt">
       <div class="field full"><label for="i-project">Project</label><input id="i-project" type="text" data-info="project" placeholder="Project name"></div>
-      <div class="field"><label for="i-contractor">Contractor</label><input id="i-contractor" type="text" data-info="contractor" placeholder="e.g. SICHUAN ROAD AND BRIDGE (GROUP) CORPORATION LTD"></div>
-      <div class="field"><label for="i-client">Client</label><input id="i-client" type="text" data-info="client" placeholder="Client"></div>
-      <div class="field"><label for="i-consultant">Consultant</label><input id="i-consultant" type="text" data-info="consultant" placeholder="e.g. NIMETA Consult (T) Ltd"></div>
-      <div class="field"><label for="i-sampleNo">Sample no. (optional)</label><input id="i-sampleNo" type="text" data-info="sampleNo" placeholder="e.g. 2026/08/001"></div>
       <div class="field"><label for="i-location">Location</label><input id="i-location" type="text" data-info="location" placeholder="e.g. KM0+006 MWENGE 3"></div>
-      <div class="field"><label for="i-materialFor">Material for</label><input id="i-materialFor" type="text" data-info="materialFor" placeholder="e.g. WING WALL AND HEAD WALL"></div>
-      <div class="field"><label for="i-materialFrom">Material from (NMC)</label><input id="i-materialFrom" type="text" data-info="materialFrom" placeholder="Batching plant"></div>
-      <div class="field"><label for="i-dateSampled">Sampling date (NMC)</label><input id="i-dateSampled" type="date" data-info="dateSampled"></div>
-      <div class="field"><label for="i-dateTested">Testing date</label><input id="i-dateTested" type="date" data-info="dateTested"></div>
+      <div class="field"><label for="i-reportDate">Report date</label><input id="i-reportDate" type="date" data-info="reportDate"></div>
+      <div class="field"><label for="i-constructionItem">Construction item</label><input id="i-constructionItem" type="text" data-info="constructionItem" placeholder="e.g. CULVERT"></div>
+      <div class="field"><label for="i-contractorTech">Contractor's technician</label><input id="i-contractorTech" type="text" data-info="contractorTech" placeholder="Name"></div>
       <div class="field"><label for="i-operator">Operator</label><input id="i-operator" type="text" data-info="operator" placeholder="e.g. MAYANGO"></div>
-      <div class="field"><label for="i-contractorTech">Contractor's Materials Technician</label><input id="i-contractorTech" type="text" data-info="contractorTech" placeholder="e.g. ADIL"></div>
-      <div class="field"><label for="i-contractorEng">Contractor's Materials Engineer</label><input id="i-contractorEng" type="text" data-info="contractorEng" placeholder="Name"></div>
-      <div class="field"><label for="i-consultantTech">Consultant's Materials Technician</label><input id="i-consultantTech" type="text" data-info="consultantTech" placeholder="e.g. AZIZ"></div>
-      <div class="field"><label for="i-consultantEng">Consultant's Materials Engineer</label><input id="i-consultantEng" type="text" data-info="consultantEng" placeholder="Name"></div>
-      <div class="field"><label for="i-constructionPart">Construction part</label><input id="i-constructionPart" type="text" data-info="constructionPart" placeholder="e.g. SURROUNDING FOR PIPE"></div>
-      <div class="field"><label for="i-mixNo">Mix no.</label><input id="i-mixNo" type="text" data-info="mixNo" placeholder="e.g. 4"></div>
-      <div class="field"><label for="i-curing">Condition for curing</label><input id="i-curing" type="text" data-info="curing" placeholder="Soaked 7 and 28Days"></div>
-      <div class="field"><label for="i-condition">Condition at testing</label><input id="i-condition" type="text" data-info="condition" placeholder="Saturated"></div>
+      <div class="field"><label for="i-consultantTech">Consultant's technician</label><input id="i-consultantTech" type="text" data-info="consultantTech" placeholder="Name"></div>
       <div class="field full"><label for="i-testMethod">Test method</label><input id="i-testMethod" type="text" data-info="testMethod" placeholder="CML TEST 2.13, ref. BS 1881: PART 116: 1983"></div>
-      <div class="field"><label for="i-cementType">Cement type</label><input id="i-cementType" type="text" data-info="cementType" placeholder="e.g. HUAXIN PORTLAND COMPOSITE CEMENT CEM II/B-M 42.5N"></div>
-      <div class="field"><label for="i-additives">Additives</label><input id="i-additives" type="text" data-info="additives" placeholder="Optional"></div>
+      <div class="field"><label for="i-constructionPart">Construction part</label><input id="i-constructionPart" type="text" data-info="constructionPart" placeholder="e.g. DITCH"></div>
+      <div class="field"><label for="i-curing">Condition for curing</label><input id="i-curing" type="text" data-info="curing" placeholder="Soaked"></div>
+      <div class="field"><label for="i-condition">Condition at testing</label><input id="i-condition" type="text" data-info="condition" placeholder="Saturated"></div>
+      <div class="field"><label for="i-cementType">Cement type</label><input id="i-cementType" type="text" data-info="cementType" placeholder="e.g. HUAXINI Cement CEM-II-42.5N"></div>
+      <div class="field"><label for="i-additives">Admixture</label><input id="i-additives" type="text" data-info="additives" placeholder="Optional"></div>
       <div class="field"><label for="i-slump">Slump (mm)</label><input id="i-slump" type="text" data-info="slump" placeholder="e.g. 87"></div>
       <div class="field"><label for="i-concreteClass">Concrete class</label><input id="i-concreteClass" type="text" data-info="concreteClass" placeholder="e.g. C25"></div>
-      <div class="field"><label for="i-coefficient">Calibration coefficient</label><input id="i-coefficient" type="number" step="any" data-info="coefficient" placeholder="0.9991"></div>
+      <div class="field"><label for="i-coefficient">Calibration coefficient</label><input id="i-coefficient" type="number" step="any" data-info="coefficient" placeholder="1.0622"></div>
       <div class="field"><label for="i-divisor">Cube factor (kN per MPa)</label><input id="i-divisor" type="number" step="any" data-info="divisor" placeholder="22.5"></div>
       <div class="field"><label for="i-volume">Cube volume (cm³)</label><input id="i-volume" type="number" step="any" data-info="volume" placeholder="3375"></div>
       <div class="field full"><label for="i-remarks">Remarks</label><input id="i-remarks" type="text" data-info="remarks" placeholder="Optional remarks"></div>
-      <div class="field full sample-override"><label for="sampleOverride"><input id="sampleOverride" type="checkbox" data-sample-override> Override NMC sample details (edit the shared fields manually)</label></div>
-      <div class="field full"><p class="hint sample-link-note" id="sampleNote"></p></div>
     </div>
 
     <h4 class="mt">Ratio of concrete per 1 m³ (kg)</h4>
@@ -96,8 +107,8 @@
       <div class="field"><label for="m-cement">Cement</label><input id="m-cement" type="number" step="any" data-mix="cement" placeholder="320"></div>
       <div class="field"><label for="m-water">Water</label><input id="m-water" type="number" step="any" data-mix="water" placeholder="205"></div>
       <div class="field"><label for="m-sand">Natural sand</label><input id="m-sand" type="number" step="any" data-mix="sand" placeholder="710"></div>
-      <div class="field"><label for="m-agg1">Aggregate 5/10 mm</label><input id="m-agg1" type="number" step="any" data-mix="agg1" placeholder="440"></div>
-      <div class="field"><label for="m-agg2">Aggregate 10/20 mm</label><input id="m-agg2" type="number" step="any" data-mix="agg2" placeholder="880"></div>
+      <div class="field"><label for="m-agg1">Aggregate 5/15 mm</label><input id="m-agg1" type="number" step="any" data-mix="agg1" placeholder="440"></div>
+      <div class="field"><label for="m-agg2">Aggregate 15/25 mm</label><input id="m-agg2" type="number" step="any" data-mix="agg2" placeholder="880"></div>
     </div>
   </section>
 
@@ -107,7 +118,7 @@
     <div class="tool-head">
       <div>
         <h3>2. Cube results</h3>
-        <p class="hint">Use <strong>+ Add cube</strong> / <strong>− Remove</strong> in each age row (or <strong>×</strong> on a single cube) to change the number of cubes — 1 to 24 per set. Density = mass ÷ cube volume × 1000; corrected load = load × calibration coefficient; strength = corrected load ÷ cube factor (22.5 for a 150 mm cube).</p>
+        <p class="hint">Use <strong>+ Add cube</strong> / <strong>− Remove</strong> in each age row (or <strong>×</strong> on a single cube) to change the cube count — 1 to 24 per set. Density = mass ÷ cube volume × 1000; corrected load = load × calibration coefficient; strength = corrected load ÷ cube factor.</p>
       </div>
       <div class="actions">
         <button class="btn" id="btnPrint" type="button">Print A4 report</button>
@@ -120,8 +131,8 @@
       <table id="cubeTable">
         <thead><tr>
           <th>Cube marking</th><th>Mass of cubes (g)</th><th>Density made (g/cm³)</th><th>Cube volume (cm³)</th>
-          <th>Load (kN)</th><th>Calibration coefficient</th><th>Correct load (kN)</th><th>Date made</th>
-          <th>Date tested</th><th>Age of cube (days)</th><th>Cube strength (MPa)</th><th>Type of failure</th>
+          <th>Load (kN)</th><th>Calibration coefficient</th><th>Correct load (kN)</th>
+          <th>Age of cube (days)</th><th>Cube strength (MPa)</th>
         </tr></thead>
         <tbody id="cubeBody"></tbody>
       </table>
@@ -132,7 +143,7 @@
       <div class="result"><span>28 days — AV strength</span><div class="value"><span id="avg1">—</span><span class="unit">MPa</span></div></div>
       <div class="result"><span>28 days — AV density</span><div class="value"><span id="dens1">—</span><span class="unit">g/cm³</span></div></div>
     </div>
-    <div class="notice"><strong>Engineering note:</strong> This calculator reproduces the arithmetic and layout of the KERBSTONE cube sheet only. Confirm cube size, calibration, curing, test procedure, acceptance class and reporting requirements against the project specification.</div>
+    <div class="notice"><strong>Engineering note:</strong> This calculator reproduces the arithmetic and layout of <em>Cubes Template.xls</em> only. Confirm cube size, calibration, curing, test procedure, acceptance class and reporting requirements against the project specification.</div>
   </section>
 </main>
 
@@ -146,7 +157,6 @@
 (function(){
   'use strict';
   var TK=window.MbiseTool||null;
-  var SAMPLE_MAP={project:'project',location:'location',materialFor:'materialFor',materialFrom:'materialFrom',dateSampled:'dateSampled'};
   function escapeHTML(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
   var esc=function(v){return (TK?TK.escapeHTML:escapeHTML)(v)};
   var fmt=function(v,d){return (TK?TK.fmt:function(x,n){return (Math.round(Number(x)*Math.pow(10,n))/Math.pow(10,n)).toFixed(n)})(v,d)};
@@ -155,24 +165,22 @@
   function num(v){if(v==null||String(v).trim()==='')return NaN;var n=Number(v);return isFinite(n)?n:NaN}
   function clean(v){return v==null?'':String(v)}
   function todayISO(){var d=new Date(),p=function(n){return n<10?'0'+n:''+n};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
-  function blankCube(mark){return {mark:mark,mass:'',load:'',dateMade:'',dateTested:'',failure:''}}
+  function blankCube(mark){return {mark:mark,mass:'',load:''}}
+  var MIN_CUBES=1,MAX_CUBES=24;
 
   function defaultState(){
     return {
-      info:{project:'',contractor:'',client:'',consultant:'',sampleNo:'',location:'',materialFor:'',materialFrom:'',dateSampled:'',
-        dateTested:todayISO(),operator:'',contractorTech:'',contractorEng:'',consultantTech:'',consultantEng:'',
-        testMethod:'CML TEST 2.13, ref. BS 1881: PART 116: 1983',constructionPart:'',curing:'Soaked 7 and 28Days',mixNo:'',
-        condition:'Saturated',cementType:'',additives:'',slump:'',concreteClass:'',coefficient:'0.9991',divisor:'22.5',
-        volume:'3375',remarks:''},
+      info:{project:'',reportDate:todayISO(),location:'',constructionItem:'',contractorTech:'',operator:'',consultantTech:'',
+        testMethod:'CML TEST 2.13, ref. BS 1881: PART 116: 1983',constructionPart:'',curing:'Soaked',condition:'Saturated',
+        cementType:'',additives:'',slump:'',concreteClass:'',coefficient:'1.0622',divisor:'22.5',volume:'3375',remarks:''},
       mix:{cement:'',water:'',sand:'',agg1:'',agg2:''},
       groups:[
-        {label:'7Days',cubes:[blankCube('1'),blankCube('2'),blankCube('3')]},
-        {label:'28Days',cubes:[blankCube('1'),blankCube('2'),blankCube('3'),blankCube('4'),blankCube('5'),blankCube('6')]}
+        {label:'7Days',castingDate:'',dateTested:'',cubes:[blankCube('1'),blankCube('2'),blankCube('3')]},
+        {label:'28Days',castingDate:'',dateTested:'',cubes:[blankCube('4'),blankCube('5'),blankCube('6'),blankCube('7'),blankCube('8'),blankCube('9')]}
       ]
     };
   }
 
-  var MIN_CUBES=1,MAX_CUBES=24;
   var state=defaultState(),restored=false,lastResult=null;
   var saveSoon=TK?TK.debounce(function(){saveNow()},450):function(){saveNow()};
 
@@ -181,20 +189,23 @@
     Object.keys(base).forEach(function(k){
       if(k==='groups'){
         if(Array.isArray(saved.groups)){
+          var offset=0;
           saved.groups.forEach(function(g,i){
             if(!base.groups[i])return;
             if(g&&typeof g==='object'){
               if(typeof g.label==='string')base.groups[i].label=g.label;
+              base.groups[i].castingDate=clean(g.castingDate);
+              base.groups[i].dateTested=clean(g.dateTested);
               if(Array.isArray(g.cubes)){
-                /* Keep the saved cube count (not the default 3 / 6). */
                 base.groups[i].cubes=g.cubes.slice(0,MAX_CUBES).map(function(c,j){
-                  var cube=blankCube(String(j+1));
+                  var cube=blankCube(String(offset+j+1));
                   if(c&&typeof c==='object')Object.keys(cube).forEach(function(f){cube[f]=clean(c[f])});
                   return cube;
                 });
-                if(!base.groups[i].cubes.length)base.groups[i].cubes=[blankCube('1')];
+                if(!base.groups[i].cubes.length)base.groups[i].cubes=[blankCube(String(offset+1))];
               }
             }
+            offset+=base.groups[i].cubes.length;
           });
         }
       }else if(base[k]&&typeof base[k]==='object'&&!Array.isArray(base[k])){
@@ -217,32 +228,20 @@
     if(msg)msg.textContent=ok?'Saved in this browser.':'Browser storage is full — export a CSV backup.';
   }
 
-  function applyLinkedSample(){
-    if(!TK)return;
-    var linked=state.info.sampleOverride!=='1';
-    var result=linked?TK.linkSample(state.info,state.info.sampleNo,SAMPLE_MAP):{record:null,linked:false};
-    var note=el('sampleNote');
-    if(note)note.textContent=result.linked&&result.record
-      ? 'Shared sample details filled from NMC sample '+state.info.sampleNo+'. Uncheck override to re-link.'
-      : (state.info.sampleOverride==='1'?'Local override active — shared fields are editable.':'');
-    if(el('sampleOverride'))el('sampleOverride').checked=state.info.sampleOverride==='1';
-    ['project','location','materialFor','materialFrom','dateSampled'].forEach(function(k){
-      var input=document.querySelector('[data-info="'+k+'"]');
-      if(input)input.readOnly=result.linked&&!!result.record;
-    });
-  }
-
   function syncInputs(){
     document.querySelectorAll('[data-info]').forEach(function(input){input.value=clean(state.info[input.dataset.info])});
     document.querySelectorAll('[data-mix]').forEach(function(input){input.value=clean(state.mix[input.dataset.mix])});
     document.querySelectorAll('[data-group-label]').forEach(function(input){
       input.value=clean(state.groups[Number(input.dataset.groupLabel)].label);
     });
+    document.querySelectorAll('[data-group-date]').forEach(function(input){
+      var g=Number(input.dataset.group);
+      input.value=clean(state.groups[g][input.dataset.groupDate]);
+    });
     document.querySelectorAll('[data-cube]').forEach(function(input){
       var g=Number(input.dataset.group),c=Number(input.dataset.cube);
       input.value=clean(state.groups[g].cubes[c][input.dataset.field]);
     });
-    applyLinkedSample();
     calc();
   }
 
@@ -250,11 +249,14 @@
     var body=el('cubeBody');if(!body)return;
     var h='';
     state.groups.forEach(function(group,gi){
-      h+='<tr class="age-row"><td colspan="12"><span>Age / set label <input type="text" data-group-label="'+gi+'" value="'+esc(group.label)+'" aria-label="Age of cube set '+(gi+1)+'"></span>'+
-        '<span class="age-tools"><span class="cube-count">Cubes: '+group.cubes.length+'</span>'+
+      h+='<tr class="age-row"><td colspan="9">Age / set label <input type="text" data-group-label="'+gi+'" value="'+esc(group.label)+'" aria-label="Age of cube set '+(gi+1)+'">'+
+        '<div class="age-tools">'+
+        '<label>Casting date <input type="date" data-group="'+gi+'" data-group-date="castingDate" value="'+esc(group.castingDate)+'" aria-label="Casting date for '+esc(group.label)+'"></label>'+
+        '<label>Date tested <input type="date" data-group="'+gi+'" data-group-date="dateTested" value="'+esc(group.dateTested)+'" aria-label="Date tested for '+esc(group.label)+'"></label>'+
+        '<span class="cube-count">Cubes: '+group.cubes.length+'</span>'+
         '<button type="button" class="btn small ghost" data-act="add-cube" data-group="'+gi+'" title="Add a cube to '+esc(group.label)+'"'+(group.cubes.length>=MAX_CUBES?' disabled':'')+'>+ Add cube</button>'+
         '<button type="button" class="btn small ghost" data-act="remove-cube" data-group="'+gi+'" data-last="1" title="Remove the last cube from '+esc(group.label)+'"'+(group.cubes.length<=MIN_CUBES?' disabled':'')+'>− Remove</button>'+
-        '</span></td></tr>';
+        '</div></td></tr>';
       group.cubes.forEach(function(cube,ci){
         h+='<tr>';
         h+='<td><input type="text" data-group="'+gi+'" data-cube="'+ci+'" data-field="mark" value="'+esc(cube.mark)+'" aria-label="Cube marking">'+
@@ -265,34 +267,36 @@
         h+='<td><input type="number" step="any" data-group="'+gi+'" data-cube="'+ci+'" data-field="load" value="'+esc(cube.load)+'" aria-label="Load"></td>';
         h+='<td class="num"><span data-out="coef" data-group="'+gi+'" data-cube="'+ci+'">'+esc(state.info.coefficient)+'</span></td>';
         h+='<td class="num out" data-out="corrected" data-group="'+gi+'" data-cube="'+ci+'">—</td>';
-        h+='<td><input type="date" data-group="'+gi+'" data-cube="'+ci+'" data-field="dateMade" value="'+esc(cube.dateMade)+'" aria-label="Date made"></td>';
-        h+='<td><input type="date" data-group="'+gi+'" data-cube="'+ci+'" data-field="dateTested" value="'+esc(cube.dateTested)+'" aria-label="Date tested"></td>';
         h+='<td class="num">'+esc(group.label)+'</td>';
         h+='<td class="num out" data-out="strength" data-group="'+gi+'" data-cube="'+ci+'">—</td>';
-        h+='<td><input type="text" data-group="'+gi+'" data-cube="'+ci+'" data-field="failure" value="'+esc(cube.failure)+'" aria-label="Type of failure"></td>';
         h+='</tr>';
       });
-      h+='<tr class="avg-row"><td colspan="10">AV — '+esc(group.label)+'</td><td class="num" data-out="avg" data-group="'+gi+'">—</td>'+
-        '<td class="num" data-out="avgDensity" data-group="'+gi+'">—</td></tr>';
+      h+='<tr class="avg-row"><td colspan="8">AV — '+esc(group.label)+'</td><td class="num" data-out="avg" data-group="'+gi+'">—</td></tr>';
     });
     body.innerHTML=h;
   }
 
-  function renumberMarks(group){
-    group.cubes.forEach(function(c,i){if(/^\d+$/.test(String(c.mark)))c.mark=String(i+1)});
+  function nextMark(gi){
+    var n=0;
+    for(var i=0;i<gi;i++)n+=state.groups[i].cubes.length;
+    return String(n+state.groups[gi].cubes.length+1);
   }
-
+  function renumberMarks(gi){
+    var group=state.groups[gi],start=1;
+    for(var i=0;i<gi;i++)start+=state.groups[i].cubes.length;
+    group.cubes.forEach(function(c,i){if(/^\d+$/.test(String(c.mark)))c.mark=String(start+i)});
+  }
   function changeCubes(gi,ci,delta){
     var group=state.groups[gi],msg=el('message');if(!group)return;
     if(delta>0){
       if(group.cubes.length>=MAX_CUBES){if(msg)msg.textContent='Maximum '+MAX_CUBES+' cubes per set.';return}
-      group.cubes.push(blankCube(String(group.cubes.length+1)));
+      group.cubes.push(blankCube(nextMark(gi)));
       if(msg)msg.textContent='Added a cube to '+group.label+'.';
     }else{
       if(group.cubes.length<=MIN_CUBES){if(msg)msg.textContent='Each set must keep at least '+MIN_CUBES+' cube.';return}
       if(ci==null||ci<0||ci>=group.cubes.length)ci=group.cubes.length-1;
       group.cubes.splice(ci,1);
-      renumberMarks(group);
+      renumberMarks(gi);
       if(msg)msg.textContent='Removed a cube from '+group.label+'.';
     }
     renderTable();calc();saveNow();
@@ -306,18 +310,17 @@
     var groups=state.groups.map(function(group){
       var cubes=group.cubes.map(function(cube){
         var mass=num(cube.mass),load=num(cube.load);
-        /* KERBSTONE stores kg/m3 under a g/(cm3) heading: mass / volume * 1000. */
+        /* Cubes Template.xls: density = mass / volume * 1000 (kg/m3 under a g/cm3 heading). */
         var density=isFinite(mass)?mass/volume*1000:NaN;
         var corrected=isFinite(load)?load*coef:NaN;
         var strength=isFinite(corrected)?corrected/divisor:NaN;
-        return {mark:cube.mark,mass:mass,load:load,density:density,corrected:corrected,strength:strength,
-          dateMade:cube.dateMade,dateTested:cube.dateTested,failure:cube.failure};
+        return {mark:cube.mark,mass:mass,load:load,density:density,corrected:corrected,strength:strength};
       });
       var okStrength=cubes.filter(function(c){return isFinite(c.strength)});
       var okDensity=cubes.filter(function(c){return isFinite(c.density)});
       var avg=okStrength.length?okStrength.reduce(function(a,c){return a+c.strength},0)/okStrength.length:NaN;
       var avgDensity=okDensity.length?okDensity.reduce(function(a,c){return a+c.density},0)/okDensity.length:NaN;
-      return {label:group.label,cubes:cubes,avg:avg,avgDensity:avgDensity};
+      return {label:group.label,castingDate:group.castingDate,dateTested:group.dateTested,cubes:cubes,avg:avg,avgDensity:avgDensity};
     });
     lastResult={groups:groups,coefficient:coef,volume:volume,divisor:divisor};
 
@@ -343,61 +346,66 @@
     return lastResult;
   }
 
-  function signBlock(){
-    var info=state.info,d=function(v){return TK?TK.dateDisplay(v):v};
-    var roles=[
-      ['Checked by:',info.contractorTech,"Contractor´s  Materials Technician",d(info.dateTested)],
-      ['Verified by:',info.contractorEng,"Contractor´s  Materials Engineer",d(info.dateTested)],
-      ['Checked  by:',info.consultantTech,"Consultant´s  Materials Technician",d(info.dateTested)],
-      ['Verified by:',info.consultantEng,"Consultant´s  Materials Engineer",d(info.dateTested)]
-    ];
-    return '<div class="rpt-sign rpt-sign--4">'+roles.map(function(x){
-      return '<div><div class="role">'+esc(x[0])+'</div><div class="line">'+(x[3]?' '+esc(x[3]):'')+'</div><div>'+esc(x[1]||'')+'</div><div class="line"></div><div class="title">'+esc(x[2])+'</div></div>';
-    }).join('')+'</div>';
-  }
-
   function buildReport(){
     if(!lastResult)calc();
     var info=state.info,r=lastResult,mix=state.mix;
     var dd=function(v){return TK?TK.dateDisplay(v):v};
     var val=function(v){return esc(v==null?'':v)};
     var cell=function(v,dec){return (typeof v==='number'&&isFinite(v))?fmt(v,dec):''};
-    var h=TK?TK.logoBand():'<div class="rpt-logos"></div>';
-    h+='<div class="rpt-title">PROJECT:  '+val(info.project)+'\n<span class="main">COMPRESSIVE STRENGTH OF CONCRETE CUBES.</span></div>';
-    h+='<table class="rpt rpt-kv"><tbody>'+
-      '<tr><td class="lbl">LOCATION:</td><td class="val">'+val(info.location)+'</td><td class="lbl2">TESTING DATE:</td><td class="val2">'+val(dd(info.dateTested))+'</td></tr>'+
-      '<tr><td class="lbl">MATERIAL FOR:</td><td class="val">'+val(info.materialFor)+'</td><td class="lbl2">CONTRACTOR´S MATERIALS TECHNICIAN:</td><td class="val2">'+val(info.contractorTech)+'</td></tr>'+
-      '<tr><td class="lbl">OPERATOR:</td><td class="val">'+val(info.operator)+'</td><td class="lbl2">CONSULTANT´S MATERIALS TECHNICIAN:</td><td class="val2">'+val(info.consultantTech)+'</td></tr>'+
-      '<tr><td class="lbl">CONSTRUCTION PART:</td><td class="val">'+val(info.constructionPart)+'</td><td class="lbl2">MIX NO.:</td><td class="val2">'+val(info.mixNo)+'</td></tr>'+
-      '</tbody></table>';
-    h+='<table class="rpt rpt-tight"><tbody>'+
-      '<tr><td class="lbl">TEST METHOD: '+val(info.testMethod)+'</td></tr>'+
-      '<tr><td class="lbl">CONDITION FOR CURING: '+val(info.curing)+'</td><td class="lbl">CONDITION AT TESTING: '+val(info.condition)+'</td></tr>'+
-      '<tr><td class="lbl">CEMENT TYPE: '+val(info.cementType)+'</td><td class="lbl">ADDITIVES: '+val(info.additives)+'</td></tr>'+
-      '<tr><td class="lbl">SLUMP (mm): '+val(info.slump)+'</td><td class="lbl">CONCRETE CLASS: '+val(info.concreteClass)+'</td></tr>'+
-      '</tbody></table>';
-    h+='<table class="rpt rpt-mini"><thead><tr><th class="lbl">Ratio of concrete per 1 m³ (kg)</th><th>Cement</th><th>Water</th><th>Natural sand</th><th>Aggregate-5/10mm</th><th>Aggregate-10/20mm</th></tr></thead>'+
-      '<tbody><tr><td class="lbl">Mix quantity</td><td class="right">'+val(mix.cement)+'</td><td class="right">'+val(mix.water)+'</td><td class="right">'+val(mix.sand)+'</td><td class="right">'+val(mix.agg1)+'</td><td class="right">'+val(mix.agg2)+'</td></tr></tbody></table>';
+    var widths=[6.785,10.462,8.859,8.859,8.764,8.671,6.221,5.561,4.806,7.069,7.257,9.614,7.069];
+    var h='<table class="rpt rpt-cube"><colgroup>'+widths.map(function(w){return '<col style="width:'+w+'%">'}).join('')+'</colgroup><tbody>';
 
-    h+='<table class="rpt rpt-mini rpt-cubes"><thead>'+
-      '<tr><th rowspan="3">Cube<br>Marking</th><th>Mass of</th><th>Density</th><th>Cube</th><th></th><th>Calibration</th><th>Correct</th><th>Date</th><th>Date</th><th>Age of</th><th>Cube</th><th rowspan="3">Type of<br>Failure</th><th rowspan="3">Av. Density<br>(g/(cm3))</th></tr>'+
-      '<tr><th>Cubes (g)</th><th>made</th><th>Volume</th><th>Load (KN)</th><th>Coefficient</th><th>Load</th><th>made</th><th>tested</th><th>Cube</th><th>Strength</th></tr>'+
-      '<tr><th></th><th>g/(cm3)</th><th>(cm3)</th><th></th><th></th><th>(KN)</th><th></th><th></th><th>(Days)</th><th>(Mpa)</th></tr>'+
-      '</thead><tbody>';
+    h+='<tr class="rpt-head-row"><td colspan="13"><div class="rpt-letterhead"><span class="rpt-jv">CCECC - CRCC JV</span>'+
+      (TK?TK.logoBand():'<div class="rpt-logos"></div>')+'</div></td></tr>';
+    h+='<tr><td colspan="13" class="rpt-proj">PROJECT:  '+val(info.project)+'</td></tr>';
+    h+='<tr><td colspan="13" class="rpt-title2">COMPRESSIVE STRENGTH OF CONCRETE CUBES.</td></tr>';
+    h+='<tr><td colspan="2" class="lbl">LOCATION:</td><td colspan="6">'+val(info.location)+'</td><td colspan="3" class="lbl">Report Date:</td><td colspan="2">'+val(dd(info.reportDate))+'</td></tr>';
+    h+='<tr><td colspan="2" class="lbl">CONSTRUCTION ITEM:</td><td colspan="6">'+val(info.constructionItem)+'</td><td colspan="3" class="lbl">Contractor\'s Technician:</td><td colspan="2">'+val(info.contractorTech)+'</td></tr>';
+    h+='<tr><td colspan="2" class="lbl">Operator:</td><td colspan="6">'+val(info.operator)+'</td><td colspan="3" class="lbl">Consultant\'s Technician:</td><td colspan="2">'+val(info.consultantTech)+'</td></tr>';
+    h+='<tr><td colspan="13">TEST METHOD  '+val(info.testMethod)+'</td></tr>';
+    h+='<tr><td colspan="13">Construction Part: '+val(info.constructionPart)+'</td></tr>';
+    h+='<tr><td colspan="13">Condition for Curing: '+val(info.curing)+'</td></tr>';
+    h+='<tr><td colspan="13">Condition at Testing:'+val(info.condition)+'</td></tr>';
+    h+='<tr class="rpt-mixhead"><td colspan="2">Ratio of Concrete per 1 cum &nbsp;: Kg</td><td colspan="2">Cement</td><td colspan="2">Water</td><td colspan="3">Natural sand</td><td colspan="2">Aggregate-5/15mm</td><td colspan="2">Aggregate-15/25mm</td></tr>';
+    h+='<tr><td colspan="2"></td><td colspan="2" class="right">'+val(mix.cement)+'</td><td colspan="2" class="right">'+val(mix.water)+'</td><td colspan="3" class="right">'+val(mix.sand)+'</td><td colspan="2" class="right">'+val(mix.agg1)+'</td><td colspan="2" class="right">'+val(mix.agg2)+'</td></tr>';
+    h+='<tr><td colspan="9">Cement :'+val(info.cementType)+'</td><td colspan="4">Admixture :'+val(info.additives)+'</td></tr>';
+    h+='<tr><td colspan="9">Slump （mm) '+val(info.slump)+'</td><td colspan="4">Concrete Class: '+val(info.concreteClass)+'</td></tr>';
+    h+='<tr class="rpt-gap"><td colspan="13"></td></tr>';
+
+    h+='<tr class="rpt-th"><td rowspan="4" class="ctr">Cube<br>Marking</td><td></td><td></td><td></td><td></td><td></td><td></td><td rowspan="4" class="ctr">Casting<br>Date</td><td></td><td></td><td></td><td colspan="2" rowspan="4"></td></tr>';
+    h+='<tr class="rpt-th"><td>Mass of</td><td>Density</td><td>Cube</td><td></td><td>Calibration</td><td>Correct</td><td>Date</td><td>Age of</td><td>Cube</td></tr>';
+    h+='<tr class="rpt-th"><td>Cubes (g)</td><td>made</td><td>Volume</td><td>Load (KN)</td><td>Coefficient</td><td>record</td><td>tested</td><td>Cube</td><td>Strength</td></tr>';
+    h+='<tr class="rpt-th"><td></td><td>g/(cm3)</td><td>(cm3)</td><td></td><td></td><td>(KN)</td><td></td><td>(Days)</td><td>(Mpa)</td></tr>';
+
     r.groups.forEach(function(group,gi){
+      var src=state.groups[gi],n=group.cubes.length;
       group.cubes.forEach(function(c,ci){
-        var src=state.groups[gi].cubes[ci];
-        h+='<tr><td class="lbl">'+val(src.mark)+'</td><td class="right">'+val(src.mass)+'</td>'+
-          '<td class="right">'+cell(c.density,2)+'</td><td class="right">'+cell(r.volume,0)+'</td>'+
-          '<td class="right">'+val(src.load)+'</td><td class="right">'+cell(r.coefficient,4)+'</td><td class="right">'+cell(c.corrected,3)+'</td>'+
-          '<td>'+val(dd(c.dateMade))+'</td><td>'+val(dd(c.dateTested))+'</td><td>'+val(group.label)+'</td>'+
-          '<td class="right"><b>'+cell(c.strength,2)+'</b></td><td>'+val(c.failure)+'</td><td></td></tr>';
+        var first=ci===0;
+        h+='<tr><td class="ctr">'+val(c.mark)+'</td>'+
+          '<td class="right">'+val(src.cubes[ci].mass)+'</td>'+
+          '<td class="right">'+cell(c.density,2)+'</td>'+
+          '<td class="right">'+cell(r.volume,0)+'</td>'+
+          '<td class="right">'+val(src.cubes[ci].load)+'</td>'+
+          '<td class="right">'+(first?cell(r.coefficient,4):'')+'</td>'+
+          '<td class="right">'+cell(c.corrected,3)+'</td>';
+        if(first){
+          h+='<td class="ctr" rowspan="'+n+'">'+val(dd(src.castingDate))+'</td>'+
+            '<td class="ctr" rowspan="'+n+'">'+val(dd(src.dateTested))+'</td>'+
+            '<td class="ctr" rowspan="'+n+'">'+val(group.label)+'</td>';
+        }
+        h+='<td class="right"><b>'+cell(c.strength,2)+'</b></td>';
+        if(first)h+='<td colspan="2" rowspan="'+n+'"></td>';
+        h+='</tr>';
       });
-      h+='<tr class="rpt-section"><td colspan="10">AV — '+val(group.label)+'</td><td class="right">'+cell(group.avg,2)+'</td><td></td><td class="right">'+cell(group.avgDensity,2)+'</td></tr>';
+      h+='<tr class="rpt-avg"><td></td><td></td><td class="right">'+cell(group.avgDensity,2)+'</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="ctr">AV</td><td class="right"><b>'+cell(group.avg,2)+'</b></td><td colspan="2"></td></tr>';
     });
+
+    h+='<tr class="rpt-remarks-row"><td colspan="13">Remarks:……………………………………………………………………………………………………………………………………………………………………………</td></tr>';
+    h+='<tr class="rpt-gap"><td colspan="13"></td></tr>';
+    h+='<tr class="rpt-sign-labels"><td colspan="3">Prepared by:</td><td colspan="3">Checked  by:</td><td colspan="4">Checked  by:</td><td colspan="3">Verified by:</td></tr>';
+    h+='<tr class="rpt-sign-lines"><td colspan="3">……………………………………………….</td><td colspan="3">………………………………………….</td><td colspan="4">…………………………………….</td><td colspan="3">……………………………………..</td></tr>';
+    h+='<tr class="rpt-sign-titles"><td colspan="3">Contractor´s  Materials Technician</td><td colspan="3">Contractor´s  Material Engineer</td><td colspan="4">Consultant´s  Material Technician</td><td colspan="3">Consultant´s  Material Engineer</td></tr>';
     h+='</tbody></table>';
-    h+='<div class="rpt-remarks">Remarks: '+val(info.remarks)+' <span class="rpt-dots"></span></div>';
-    h+=signBlock();
     return h;
   }
 
@@ -413,21 +421,24 @@
   }
 
   function exportCsv(){
-    var r=calc(),rows=[['PROJECT',state.info.project],['CONTRACTOR',state.info.contractor],['CONSULTANT',state.info.consultant],
-      ['LOCATION',state.info.location],['SAMPLE NO',state.info.sampleNo],['TESTING DATE',state.info.dateTested],
-      ['CONCRETE CLASS',state.info.concreteClass],['CALIBRATION COEFFICIENT',state.info.coefficient],
-      ['CUBE FACTOR (kN per MPa)',state.info.divisor],['CUBE VOLUME (cm3)',state.info.volume],[],
-      ['SET','CUBE MARKING','MASS (g)','DENSITY (g/cm3)','LOAD (kN)','CORRECTED LOAD (kN)','DATE MADE','DATE TESTED','AGE (Days)','STRENGTH (MPa)','TYPE OF FAILURE']];
+    function dd(v){return TK?TK.dateDisplay(v):v}
+    var r=calc(),rows=[['PROJECT',state.info.project],['REPORT DATE',state.info.reportDate],
+      ['LOCATION',state.info.location],['CONSTRUCTION ITEM',state.info.constructionItem],
+      ['CONTRACTOR TECHNICIAN',state.info.contractorTech],['OPERATOR',state.info.operator],
+      ['CONSULTANT TECHNICIAN',state.info.consultantTech],['CONCRETE CLASS',state.info.concreteClass],
+      ['CALIBRATION COEFFICIENT',state.info.coefficient],['CUBE FACTOR (kN per MPa)',state.info.divisor],
+      ['CUBE VOLUME (cm3)',state.info.volume],[],
+      ['SET','CASTING DATE','DATE TESTED','CUBE MARKING','MASS (g)','DENSITY (g/cm3)','LOAD (kN)','CORRECTED LOAD (kN)','STRENGTH (MPa)']];
     r.groups.forEach(function(group,gi){
+      var src=state.groups[gi];
       group.cubes.forEach(function(c,ci){
-        var src=state.groups[gi].cubes[ci];
-        rows.push([group.label,src.mass===undefined?'':src.mark,src.mass,
-          isFinite(c.density)?fmt(c.density,2):'',src.load,isFinite(c.corrected)?fmt(c.corrected,3):'',
-          c.dateMade,c.dateTested,group.label,isFinite(c.strength)?fmt(c.strength,2):'',c.failure]);
+        rows.push([group.label,dd(src.castingDate),dd(src.dateTested),src.cubes[ci].mark,src.cubes[ci].mass,
+          isFinite(c.density)?fmt(c.density,2):'',src.cubes[ci].load,isFinite(c.corrected)?fmt(c.corrected,3):'',
+          isFinite(c.strength)?fmt(c.strength,2):'']);
       });
-      rows.push([group.label+' AV','','','','','','','','',isFinite(group.avg)?fmt(group.avg,2):'',isFinite(group.avgDensity)?fmt(group.avgDensity,2):'']);
+      rows.push([group.label+' AV','','','','',isFinite(group.avgDensity)?fmt(group.avgDensity,2):'','','',isFinite(group.avg)?fmt(group.avg,2):'']);
     });
-    if(TK)TK.exportCSV('cube-strength-kerbstone-'+TK.fileStamp()+'.csv',rows);
+    if(TK)TK.exportCSV('cube-strength-'+TK.fileStamp()+'.csv',rows);
   }
 
   function resetAll(){
@@ -435,7 +446,7 @@
     if(TK)TK.store('cube-strength-kerbstone').clear();
     state=defaultState();
     renderTable();syncInputs();saveNow();
-    el('message').textContent='KERBSTONE cube sheet reset.';
+    el('message').textContent='Cubes template sheet reset.';
   }
 
   function init(){
@@ -443,18 +454,20 @@
     if(TK)TK.mountLogoSetup('logoSetup');
     renderTable();
     syncInputs();
-    if(restored)el('message').textContent='Restored your saved KERBSTONE cube sheet from this browser.';
+    if(restored)el('message').textContent='Restored your saved cube sheet from this browser.';
 
     document.addEventListener('input',function(e){
       var t=e.target;if(!t||!t.dataset)return;
       if(t.dataset.info){
         state.info[t.dataset.info]=t.value;
-        if(TK&&t.dataset.info==='sampleNo'){applyLinkedSample();syncInputs()}
-        else calc();
-        saveSoon();return;
+        calc();saveSoon();return;
       }
       if(t.dataset.mix){state.mix[t.dataset.mix]=t.value;saveSoon();return;}
       if(t.dataset.groupLabel!==undefined){state.groups[Number(t.dataset.groupLabel)].label=t.value;syncInputs();saveSoon();return;}
+      if(t.dataset.groupDate!==undefined){
+        state.groups[Number(t.dataset.group)][t.dataset.groupDate]=t.value;
+        saveSoon();return;
+      }
       if(t.dataset.cube!==undefined){
         var g=Number(t.dataset.group),c=Number(t.dataset.cube);
         state.groups[g].cubes[c][t.dataset.field]=t.value;
@@ -468,10 +481,6 @@
       var gi=Number(btn.dataset.group);
       if(btn.dataset.act==='add-cube')changeCubes(gi,null,1);
       else if(btn.dataset.act==='remove-cube')changeCubes(gi,btn.dataset.removeCube===undefined?null:Number(btn.dataset.removeCube),-1);
-    });
-    if(el('sampleOverride'))el('sampleOverride').addEventListener('change',function(){
-      state.info.sampleOverride=this.checked?'1':'';
-      applyLinkedSample();syncInputs();saveSoon();
     });
     window.addEventListener('beforeunload',saveNow);
     if(el('btnPrint'))el('btnPrint').addEventListener('click',printSheet);
