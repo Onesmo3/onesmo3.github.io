@@ -39,9 +39,7 @@
     .print-sheet .rpt-cube{font-size:6.1pt;line-height:1.05;margin:0}
     .print-sheet .rpt-cube th,.print-sheet .rpt-cube td{padding:1px 1.5px;font-size:6.1pt;line-height:1.05}
     .print-sheet .rpt-head-row td{border:0!important;padding:0!important}
-    .print-sheet .rpt-letterhead{display:flex;align-items:center;gap:5mm;height:23mm}
-    .print-sheet .rpt-jv{font:700 12pt/1.1 Arial,Helvetica,sans-serif;white-space:nowrap}
-    .print-sheet .rpt-letterhead .rpt-logos{flex:1;height:22mm;margin:0;gap:3mm}
+    .print-sheet .rpt-head-row .rpt-logos{height:22mm;margin:0;gap:3mm}
     .print-sheet .rpt-proj,.print-sheet .rpt-title2{text-align:center;font-weight:700;font-size:8pt}
     .print-sheet .rpt-title2{font-size:9pt}
     .print-sheet .rpt-mixhead td,.print-sheet .rpt-th td{text-align:center;font-weight:700}
@@ -355,8 +353,8 @@
     var widths=[6.785,10.462,8.859,8.859,8.764,8.671,6.221,5.561,4.806,7.069,7.257,9.614,7.069];
     var h='<table class="rpt rpt-cube"><colgroup>'+widths.map(function(w){return '<col style="width:'+w+'%">'}).join('')+'</colgroup><tbody>';
 
-    h+='<tr class="rpt-head-row"><td colspan="13"><div class="rpt-letterhead"><span class="rpt-jv">CCECC - CRCC JV</span>'+
-      (TK?TK.logoBand():'<div class="rpt-logos"></div>')+'</div></td></tr>';
+    h+='<tr class="rpt-head-row"><td colspan="13">'+
+      (TK?TK.logoBand():'<div class="rpt-logos"></div>')+'</td></tr>';
     h+='<tr><td colspan="13" class="rpt-proj">PROJECT:  '+val(info.project)+'</td></tr>';
     h+='<tr><td colspan="13" class="rpt-title2">COMPRESSIVE STRENGTH OF CONCRETE CUBES.</td></tr>';
     h+='<tr><td colspan="2" class="lbl">LOCATION:</td><td colspan="6">'+val(info.location)+'</td><td colspan="3" class="lbl">Report Date:</td><td colspan="2">'+val(dd(info.reportDate))+'</td></tr>';
